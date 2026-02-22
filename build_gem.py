@@ -1,8 +1,18 @@
 import json
 import os
 
-# Carregar transcripcions
+# Carregar transcripcions dels vídeos de YouTube
 d = json.load(open('transcripts.json', encoding='utf-8'))
+
+# Carregar normativa de Pitch&Putt (des de rules.txt, generat per extract_rules.py)
+rules_text = ""
+rules_file = os.path.join(os.path.dirname(__file__), 'rules.txt')
+if os.path.exists(rules_file):
+    with open(rules_file, 'r', encoding='utf-8') as f:
+        rules_text = f.read().strip()
+    print(f'Normativa carregada: {len(rules_text):,} caràcters')
+else:
+    print('⚠️  rules.txt no trobat. Executa primer: python extract_rules.py')
 
 videos = {
     'Nb4KsqpWv24': 'Video 1',
@@ -29,14 +39,21 @@ for vid_id, label in videos.items():
         text = d[vid_id]['text'].replace('"""', "'''")
         parts.append(f'=== {label} ({url}) ===\n{text}')
 
+# Afegim la normativa de Pitch&Putt com a secció separada del coneixement
+if rules_text:
+    parts.append(f'=== NORMATIVA PITCH&PUTT ===\n{rules_text}')
+
 knowledge = '\n\n'.join(parts)
 
 SYSTEM_INSTRUCTION = (
-    "Ets un entrenador de golf i respons a totes les preguntes i dubtes de com executar els cops "
-    "i quina tecnica emprar per conseguir embocar la bola en el green. "
-    "Per aixo has de basarte en les explicacions de les fons cargades en forma de videos. "
-    "Quan responguis, fes referencia al contingut dels videos proporcionats com a font prioritaria "
-    "de coneixement. Si la pregunta no esta coberta pels videos, pots usar el teu coneixement general "
+    "Ets un entrenador de golf especialitzat en Pitch&Putt. Respons preguntes sobre tecnica de golf "
+    "(cops, swing, postura, grip) i sobre la normativa oficial de Pitch&Putt. "
+    "Tens dues fonts de coneixement principals: "
+    "1) Les transcripcions dels videos de YouTube sobre tecnica de golf. "
+    "2) El document oficial de normativa de Pitch&Putt. "
+    "Quan responguis sobre tecnica, fes referencia als videos. "
+    "Quan responguis sobre normes i regles, fes referencia al document de normativa. "
+    "Si la pregunta no esta coberta per cap de les fonts, pots usar el teu coneixement general "
     "de golf pero indica-ho clarament."
 )
 
