@@ -160,6 +160,7 @@ if seccio == "💬 Consulta al entrenador":
 
     st.title("💬 Consulta al Entrenador de Golf")
     st.caption("Fes preguntes sobre tècnica, swing, postura, grip... Basat en els vídeos del canal.")
+    st.caption("També pots consultar sobre les regles del Pitch&Putt.")
 
     # Instrucció de sistema: rol de l'entrenador + transcripcions dels vídeos
     full_system = (
