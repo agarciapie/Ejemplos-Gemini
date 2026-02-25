@@ -20,12 +20,12 @@ Execució:
 import streamlit as st               # Framework web per crear la interfície d'usuari
 from google import genai             # NOU SDK de Google Gemini (substitueix google.generativeai)
 from google.genai import types       # Tipus de configuració del nou SDK
+import streamlit.components.v1 as components  # Per injectar JS al navegador (comptador)
 import os                            # Operacions amb el sistema de fitxers
 import time                          # Pausar l'execució mentre el servidor processa el vídeo
 import tempfile                      # Crear fitxers temporals per al vídeo pujat
 import re                            # Expressions regulars per extreure text de CoachGolfGem.py
 import ast                           # Avaluació segura de literals Python
-import requests                      # Crida HTTP per actualitzar el comptador de visites
 
 
 # ── CÀRREGA DEL CONEIXEMENT (KNOWLEDGE) ───────────────────────────────────────
@@ -115,24 +115,42 @@ if not API_KEY:
             API_KEY = f.read().strip()
 
 
-# ── COMPTADOR DE VISITES ──────────────────────────────────────────────────────
-# Usem counterapi.dev (servei gratuït, sense registre).
-# session_state evita comptar més d'una vegada per sessió de navegador:
-# Streamlit relança l'script en cada interacció, però "visit_counted" persisteix
-# mentre la pestanya del navegador resti oberta.
+# ── COMPTADOR DE VISITES (JavaScript + localStorage) ───────────────────────
+# El comptador s'executa al NAVEGADOR (JavaScript), no al servidor Python.
+# localStorage guarda la data de l'ultima visita comptada; d'aquesta manera,
+# les recarregues de pàgina (F5) NO incrementen el comptador perquè el
+# navegador recorda que ja s'ha comptat avui.
+# counterapi.dev és un servei gratuït que emmagatzema el recompte persistent.
 
-COUNTER_URL = "https://api.counterapi.dev/v1/coachgolfpro/visites"
+COUNTER_API = "https://api.counterapi.dev/v1/coachgolfpro/visites"
 
-if "visit_counted" not in st.session_state:
-    st.session_state.visit_counted = True
-    st.session_state.visit_count = None
-    try:
-        # /up incrementa el comptador en 1 i retorna el valor actual
-        resp = requests.get(COUNTER_URL + "/up", timeout=3)
-        if resp.status_code == 200:
-            st.session_state.visit_count = resp.json().get("count")
-    except Exception:
-        pass  # Si la xarxa falla, el comptador no es mostra però l'app continua
+_counter_html = f"""
+<html><head>
+<style>
+  body {{ margin:0; padding:4px 0; background:transparent; font-family:sans-serif; }}
+  .lbl {{ color:#bbf7d0; font-size:12px; letter-spacing:0.5px; }}
+  .num {{ color:#ffffff; font-size:18px; font-weight:700; }}
+</style>
+</head><body>
+<div class="lbl">👥 Visites totals</div>
+<div class="num" id="cnt">…</div>
+<script>
+const KEY = 'gcp_visit_day';
+const today = new Date().toDateString();
+// Si avui ja s'ha comptat: només llegim; si no: incrementem i guardem la data
+const url = (localStorage.getItem(KEY) === today)
+  ? '{COUNTER_API}'        // lectura sense increment
+  : '{COUNTER_API}/up';    // increment + lectura
+if (localStorage.getItem(KEY) !== today) {{
+  localStorage.setItem(KEY, today);
+}}
+fetch(url)
+  .then(r => r.json())
+  .then(d => {{ document.getElementById('cnt').textContent = d.count.toLocaleString('ca'); }})
+  .catch(() => {{ document.getElementById('cnt').textContent = '—'; }});
+</script>
+</body></html>
+"""
 
 
 # ── MENÚ LATERAL (NAVEGACIÓ) ──────────────────────────────────────────────────
@@ -151,10 +169,10 @@ with st.sidebar:
         "<small>Entrenador basat en vídeos de YouTube + anàlisi d'IA de Gemini</small>",
         unsafe_allow_html=True,
     )
-    # Mostra el total de visites (si s'ha pogut obtenir del servidor)
-    if st.session_state.get("visit_count") is not None:
-        st.markdown("---")
-        st.metric("👥 Visites totals", f"{st.session_state.visit_count:,}")
+    # Comptador de visites: s'executa al navegador via JS i usa localStorage
+    # per no comptar més d'una vegada per dia per navegador
+    st.markdown("---")
+    components.html(_counter_html, height=55)
 
 
 # ── VALIDACIÓ DE LA API KEY ───────────────────────────────────────────────────
