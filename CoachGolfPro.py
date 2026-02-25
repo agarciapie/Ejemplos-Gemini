@@ -9,6 +9,7 @@ Requeriments (requirements.txt):
   streamlit
   google-genai
   youtube-transcript-api
+  requests
 
 Execució:
   streamlit run CoachGolfPro.py
@@ -24,6 +25,7 @@ import time                          # Pausar l'execució mentre el servidor pro
 import tempfile                      # Crear fitxers temporals per al vídeo pujat
 import re                            # Expressions regulars per extreure text de CoachGolfGem.py
 import ast                           # Avaluació segura de literals Python
+import requests                      # Crida HTTP per actualitzar el comptador de visites
 
 
 # ── CÀRREGA DEL CONEIXEMENT (KNOWLEDGE) ───────────────────────────────────────
@@ -113,6 +115,26 @@ if not API_KEY:
             API_KEY = f.read().strip()
 
 
+# ── COMPTADOR DE VISITES ──────────────────────────────────────────────────────
+# Usem counterapi.dev (servei gratuït, sense registre).
+# session_state evita comptar més d'una vegada per sessió de navegador:
+# Streamlit relança l'script en cada interacció, però "visit_counted" persisteix
+# mentre la pestanya del navegador resti oberta.
+
+COUNTER_URL = "https://api.counterapi.dev/v1/coachgolfpro/visites"
+
+if "visit_counted" not in st.session_state:
+    st.session_state.visit_counted = True
+    st.session_state.visit_count = None
+    try:
+        # /up incrementa el comptador en 1 i retorna el valor actual
+        resp = requests.get(COUNTER_URL + "/up", timeout=3)
+        if resp.status_code == 200:
+            st.session_state.visit_count = resp.json().get("count")
+    except Exception:
+        pass  # Si la xarxa falla, el comptador no es mostra però l'app continua
+
+
 # ── MENÚ LATERAL (NAVEGACIÓ) ──────────────────────────────────────────────────
 # st.radio retorna l'opció seleccionada; condiciona quin bloc s'executa
 
@@ -129,6 +151,10 @@ with st.sidebar:
         "<small>Entrenador basat en vídeos de YouTube + anàlisi d'IA de Gemini</small>",
         unsafe_allow_html=True,
     )
+    # Mostra el total de visites (si s'ha pogut obtenir del servidor)
+    if st.session_state.get("visit_count") is not None:
+        st.markdown("---")
+        st.metric("👥 Visites totals", f"{st.session_state.visit_count:,}")
 
 
 # ── VALIDACIÓ DE LA API KEY ───────────────────────────────────────────────────
