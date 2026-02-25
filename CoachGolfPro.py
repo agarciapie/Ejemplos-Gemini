@@ -115,42 +115,44 @@ if not API_KEY:
             API_KEY = f.read().strip()
 
 
-# ── COMPTADOR DE VISITES (JavaScript + localStorage) ───────────────────────
-# El comptador s'executa al NAVEGADOR (JavaScript), no al servidor Python.
-# localStorage guarda la data de l'ultima visita comptada; d'aquesta manera,
-# les recarregues de pàgina (F5) NO incrementen el comptador perquè el
-# navegador recorda que ja s'ha comptat avui.
-# counterapi.dev és un servei gratuït que emmagatzema el recompte persistent.
+# ── COMPTADOR DE VISITES (imatge SVG + sessionStorage) ───────────────────────
+# hits.seeyoufarm.com és un servei provat que funciona via imatges SVG:
+# no té problemes de CORS perquè el navegador simplement carrega una imatge.
+# Té dos endpoints diferenciats:
+#   /incr/badge.svg  → incrementa el comptador I mostra el valor
+#   /keep/badge.svg  → mostra el valor sense incrementar
+#
+# sessionStorage (a diferència de localStorage) s'esborra quan es tanca la
+# pestanya del navegador. Comportament resultant:
+#   - Obrir l'app (nova pestanya) → compta ✅
+#   - F5 / recarrega          → NO compta ✅
+#   - Tancar i tornar a obrir → compta ✅  (nova sessió)
+#   - Altre ordinador         → compta ✅  (sessionStorage independent)
 
-COUNTER_API = "https://api.counterapi.dev/v1/coachgolfpro/visites"
+_BADGE_INCR = "https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=coachgolfpro-streamlit&count_bg=%2322c55e&title_bg=%2314532d&title=Visites&edge_flat=true"
+_BADGE_KEEP = "https://hits.seeyoufarm.com/api/count/keep/badge.svg?url=coachgolfpro-streamlit&count_bg=%2322c55e&title_bg=%2314532d&title=Visites&edge_flat=true"
 
 _counter_html = f"""
 <html><head>
 <style>
-  body {{ margin:0; padding:4px 0; background:transparent; font-family:sans-serif; }}
-  .lbl {{ color:#bbf7d0; font-size:12px; letter-spacing:0.5px; }}
-  .num {{ color:#ffffff; font-size:18px; font-weight:700; }}
+  body {{ margin:0; padding:4px 0; background:transparent; }}
+  img  {{ height:22px; border-radius:4px; }}
 </style>
 </head><body>
-<div class="lbl">👥 Visites totals</div>
-<div class="num" id="cnt">…</div>
+<img id="badge" src="" alt="Visites" />
 <script>
-const KEY = 'gcp_visit_day';
-const today = new Date().toDateString();
-// Si avui ja s'ha comptat: només llegim; si no: incrementem i guardem la data
-const url = (localStorage.getItem(KEY) === today)
-  ? '{COUNTER_API}'        // lectura sense increment
-  : '{COUNTER_API}/up';    // increment + lectura
-if (localStorage.getItem(KEY) !== today) {{
-  localStorage.setItem(KEY, today);
+// sessionStorage: persists while the tab is open, cleared on tab close
+const KEY = 'gcp_session_counted';
+if (!sessionStorage.getItem(KEY)) {{
+  sessionStorage.setItem(KEY, '1');
+  document.getElementById('badge').src = '{_BADGE_INCR}';  // increment
+}} else {{
+  document.getElementById('badge').src = '{_BADGE_KEEP}';  // view only
 }}
-fetch(url)
-  .then(r => r.json())
-  .then(d => {{ document.getElementById('cnt').textContent = d.count.toLocaleString('ca'); }})
-  .catch(() => {{ document.getElementById('cnt').textContent = '—'; }});
 </script>
 </body></html>
 """
+
 
 
 # ── MENÚ LATERAL (NAVEGACIÓ) ──────────────────────────────────────────────────
