@@ -20,7 +20,6 @@ Execució:
 import streamlit as st               # Framework web per crear la interfície d'usuari
 from google import genai             # NOU SDK de Google Gemini (substitueix google.generativeai)
 from google.genai import types       # Tipus de configuració del nou SDK
-import streamlit.components.v1 as components  # Per injectar JS al navegador (comptador)
 import os                            # Operacions amb el sistema de fitxers
 import time                          # Pausar l'execució mentre el servidor processa el vídeo
 import tempfile                      # Crear fitxers temporals per al vídeo pujat
@@ -115,34 +114,19 @@ if not API_KEY:
             API_KEY = f.read().strip()
 
 
-# ── COMPTADOR DE VISITES (imatge SVG + sessionStorage) ───────────────────────
-# Usa imatges SVG de hits.seeyoufarm.com (sense CORS).
-# El JS escriu la imatge directament amb document.write() (sense timing issues).
-# sessionStorage evita comptar recarregues F5 dins la mateixa sessió de pestanya.
 
-_BADGE_BASE = "https://hits.seeyoufarm.com/api/count/{mode}/badge.svg?url=coachgolfpro-streamlit&count_bg=%2322c55e&title_bg=%2314532d&title=Visites&edge_flat=true"
-_BADGE_INCR = _BADGE_BASE.format(mode="incr")  # incrementa el comptador
-_BADGE_KEEP = _BADGE_BASE.format(mode="keep")  # llegeix sense incrementar
-
-_counter_html = f"""<!DOCTYPE html>
-<html><head>
-<style>
-  body {{ margin:0; padding:6px 0 0 0; background:transparent; }}
-  img  {{ height:24px; border-radius:3px; display:block; }}
-</style>
-</head><body>
-<script>
-// Tria la URL de la imatge: incr (1a visita de la sessió) o keep (recarrega)
-var KEY = 'gcp_v1';
-var src = sessionStorage.getItem(KEY)
-  ? '{_BADGE_KEEP}'
-  : (sessionStorage.setItem(KEY,'1'), '{_BADGE_INCR}');
-document.write('<img src="' + src + '" alt="Visites" onerror="this.style.display=\'none\'">');
-</script>
-<noscript><img src="{_BADGE_KEEP}" alt="Visites"></noscript>
-</body></html>"""
-
-
+# ── COMPTADOR DE VISITES ──────────────────────────────────────────────────────
+# Imatge SVG de hits.seeyoufarm.com incrustada directament via st.markdown.
+# No requereix JS ni iframes. El navegador carrega la imatge quan obres la pàgina;
+# les rerenderitzacions de Streamlit no la recarreguen (React no modifica nodes
+# del DOM si l'atribut src no canvia), de manera que el comptador
+# s'incrementa una vegada per cada vegada que s'obre o recarrega la pàgina.
+_BADGE_URL = (
+    "https://hits.seeyoufarm.com/api/count/incr/badge.svg"
+    "?url=coachgolfpro-streamlit"
+    "&count_bg=%2322c55e&title_bg=%2314532d"
+    "&title=Visites&edge_flat=true"
+)
 
 
 # ── MENÚ LATERAL (NAVEGACIÓ) ──────────────────────────────────────────────────
@@ -161,10 +145,12 @@ with st.sidebar:
         "<small>Entrenador basat en vídeos de YouTube + anàlisi d'IA de Gemini</small>",
         unsafe_allow_html=True,
     )
-    # Comptador de visites: s'executa al navegador via JS i usa localStorage
-    # per no comptar més d'una vegada per dia per navegador
+    # Comptador de visites: imatge SVG incrustada directament al sidebar
     st.markdown("---")
-    components.html(_counter_html, height=55)
+    st.markdown(
+        f'<img src="{_BADGE_URL}" alt="Visites" style="height:22px; border-radius:3px;">',
+        unsafe_allow_html=True,
+    )
 
 
 # ── VALIDACIÓ DE LA API KEY ───────────────────────────────────────────────────
