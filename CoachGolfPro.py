@@ -116,42 +116,32 @@ if not API_KEY:
 
 
 # ── COMPTADOR DE VISITES (imatge SVG + sessionStorage) ───────────────────────
-# hits.seeyoufarm.com és un servei provat que funciona via imatges SVG:
-# no té problemes de CORS perquè el navegador simplement carrega una imatge.
-# Té dos endpoints diferenciats:
-#   /incr/badge.svg  → incrementa el comptador I mostra el valor
-#   /keep/badge.svg  → mostra el valor sense incrementar
-#
-# sessionStorage (a diferència de localStorage) s'esborra quan es tanca la
-# pestanya del navegador. Comportament resultant:
-#   - Obrir l'app (nova pestanya) → compta ✅
-#   - F5 / recarrega          → NO compta ✅
-#   - Tancar i tornar a obrir → compta ✅  (nova sessió)
-#   - Altre ordinador         → compta ✅  (sessionStorage independent)
+# Usa imatges SVG de hits.seeyoufarm.com (sense CORS).
+# El JS escriu la imatge directament amb document.write() (sense timing issues).
+# sessionStorage evita comptar recarregues F5 dins la mateixa sessió de pestanya.
 
-_BADGE_INCR = "https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=coachgolfpro-streamlit&count_bg=%2322c55e&title_bg=%2314532d&title=Visites&edge_flat=true"
-_BADGE_KEEP = "https://hits.seeyoufarm.com/api/count/keep/badge.svg?url=coachgolfpro-streamlit&count_bg=%2322c55e&title_bg=%2314532d&title=Visites&edge_flat=true"
+_BADGE_BASE = "https://hits.seeyoufarm.com/api/count/{mode}/badge.svg?url=coachgolfpro-streamlit&count_bg=%2322c55e&title_bg=%2314532d&title=Visites&edge_flat=true"
+_BADGE_INCR = _BADGE_BASE.format(mode="incr")  # incrementa el comptador
+_BADGE_KEEP = _BADGE_BASE.format(mode="keep")  # llegeix sense incrementar
 
-_counter_html = f"""
+_counter_html = f"""<!DOCTYPE html>
 <html><head>
 <style>
-  body {{ margin:0; padding:4px 0; background:transparent; }}
-  img  {{ height:22px; border-radius:4px; }}
+  body {{ margin:0; padding:6px 0 0 0; background:transparent; }}
+  img  {{ height:24px; border-radius:3px; display:block; }}
 </style>
 </head><body>
-<img id="badge" src="" alt="Visites" />
 <script>
-// sessionStorage: persists while the tab is open, cleared on tab close
-const KEY = 'gcp_session_counted';
-if (!sessionStorage.getItem(KEY)) {{
-  sessionStorage.setItem(KEY, '1');
-  document.getElementById('badge').src = '{_BADGE_INCR}';  // increment
-}} else {{
-  document.getElementById('badge').src = '{_BADGE_KEEP}';  // view only
-}}
+// Tria la URL de la imatge: incr (1a visita de la sessió) o keep (recarrega)
+var KEY = 'gcp_v1';
+var src = sessionStorage.getItem(KEY)
+  ? '{_BADGE_KEEP}'
+  : (sessionStorage.setItem(KEY,'1'), '{_BADGE_INCR}');
+document.write('<img src="' + src + '" alt="Visites" onerror="this.style.display=\'none\'">');
 </script>
-</body></html>
-"""
+<noscript><img src="{_BADGE_KEEP}" alt="Visites"></noscript>
+</body></html>"""
+
 
 
 
