@@ -25,6 +25,7 @@ import time                          # Pausar l'execució mentre el servidor pro
 import tempfile                      # Crear fitxers temporals per al vídeo pujat
 import re                            # Expressions regulars per extreure text de CoachGolfGem.py
 import ast                           # Avaluació segura de literals Python
+import requests as _req              # Crida HTTP servidor→API per al comptador de visites
 
 
 # ── CÀRREGA DEL CONEIXEMENT (KNOWLEDGE) ───────────────────────────────────────
@@ -115,18 +116,27 @@ if not API_KEY:
 
 
 
-# ── COMPTADOR DE VISITES ──────────────────────────────────────────────────────
-# Imatge SVG de hits.seeyoufarm.com incrustada directament via st.markdown.
-# No requereix JS ni iframes. El navegador carrega la imatge quan obres la pàgina;
-# les rerenderitzacions de Streamlit no la recarreguen (React no modifica nodes
-# del DOM si l'atribut src no canvia), de manera que el comptador
-# s'incrementa una vegada per cada vegada que s'obre o recarrega la pàgina.
-_BADGE_URL = (
-    "https://hits.seeyoufarm.com/api/count/incr/badge.svg"
-    "?url=coachgolfpro-streamlit"
-    "&count_bg=%2322c55e&title_bg=%2314532d"
-    "&title=Visites&edge_flat=true"
-)
+
+# ── COMPTADOR DE VISITES (servidor Python → API) ─────────────────────────────
+# La crida HTTP es fa des del SERVIDOR Python (no del navegador),
+# de manera que no hi ha problemes de CORS ni de CSP del navegador.
+# session_state evita comptar més d'una vegada per sessió de Streamlit:
+# - Clic a un botó / canvi de sacció  → NO compta (session_state persisteix)
+# - Obrir l'app / F5 / nova pestanya  → SÍ compta (nova sessió = nova visita)
+
+if "visit_counted" not in st.session_state:
+    st.session_state.visit_counted = True
+    st.session_state.visit_count = None
+    try:
+        r = _req.get(
+            "https://api.counterapi.dev/v1/coachgolfpro/visites/up",
+            timeout=4,
+        )
+        if r.ok:
+            st.session_state.visit_count = r.json().get("count")
+    except Exception:
+        pass  # Si l'API no respon, el comptador no es mostra però l'app continua
+
 
 
 # ── MENÚ LATERAL (NAVEGACIÓ) ──────────────────────────────────────────────────
@@ -145,12 +155,10 @@ with st.sidebar:
         "<small>Entrenador basat en vídeos de YouTube + anàlisi d'IA de Gemini</small>",
         unsafe_allow_html=True,
     )
-    # Comptador de visites: imatge SVG incrustada directament al sidebar
-    st.markdown("---")
-    st.markdown(
-        f'<img src="{_BADGE_URL}" alt="Visites" style="height:22px; border-radius:3px;">',
-        unsafe_allow_html=True,
-    )
+    # Mostra el recompte de visites (només si l'API ha respost correctament)
+    if st.session_state.get("visit_count") is not None:
+        st.markdown("---")
+        st.metric("\U0001f465 Visites", f"{st.session_state.visit_count:,}")
 
 
 # ── VALIDACIÓ DE LA API KEY ───────────────────────────────────────────────────
