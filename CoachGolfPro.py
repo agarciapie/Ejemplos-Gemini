@@ -26,6 +26,7 @@ import tempfile                      # Crear fitxers temporals per al vídeo puj
 import re                            # Expressions regulars per extreure text de CoachGolfGem.py
 import ast                           # Avaluació segura de literals Python
 import requests as _req              # Crida HTTP servidor→API per al comptador de visites
+import streamlit.components.v1 as _components  # Per injectar HTML/JS (Google Analytics)
 
 
 # ── CÀRREGA DEL CONEIXEMENT (KNOWLEDGE) ───────────────────────────────────────
@@ -81,6 +82,27 @@ st.set_page_config(
     page_icon="⛳",
     layout="wide",
 )
+
+# ── GOOGLE ANALYTICS (GA4) ────────────────────────────────────────────────────
+# S'injecta el codi de seguiment de GA4 un sol cop per sessió.
+# components.html() executa el JavaScript dins d'un iframe separat
+# però l'event de pàgina (pageview) s'envia igualment a GA4.
+GA4_ID = "G-KBSGED08HM"
+if "ga_injected" not in st.session_state:
+    st.session_state.ga_injected = True
+    _components.html(
+        f"""
+        <!-- Google tag (gtag.js) -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id={GA4_ID}"></script>
+        <script>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){{dataLayer.push(arguments);}}
+          gtag('js', new Date());
+          gtag('config', '{GA4_ID}');
+        </script>
+        """,
+        height=0,
+    )
 
 # CSS personalitzat per als colors i estil de la interfície
 st.markdown("""
