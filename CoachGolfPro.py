@@ -125,8 +125,15 @@ if not API_KEY:
 # - Obrir l'app / F5 / nova pestanya  → SÍ compta (nova sessió = nova visita)
 
 if "visit_counted" not in st.session_state:
-    st.session_state.visit_counted = True
+    # Primera vegada que aquesta sessió de navegador arriba aquí:
+    # inicialitzem el flag a False i fem la crida a l'API UNA SOLA VEGADA.
+    # Les rerenderitzacions de Streamlit (botons, st.rerun, canvis de secció)
+    # NO entren aquí perquè session_state ja conté "visit_counted".
+    st.session_state.visit_counted = False
     st.session_state.visit_count = None
+
+if not st.session_state.visit_counted:
+    st.session_state.visit_counted = True
     try:
         r = _req.get(
             "https://api.counterapi.dev/v1/coachgolfpro/visites/up",
