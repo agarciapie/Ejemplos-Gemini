@@ -17,6 +17,7 @@ Execució:
 
 # ── IMPORTACIONS ───────────────────────────────────────────────────────────────
 
+from PIL import _GA4_ENDPOINT
 import streamlit as st               # Framework web per crear la interfície d'usuari
 from google import genai             # NOU SDK de Google Gemini (substitueix google.generativeai)
 from google.genai import types       # Tipus de configuració del nou SDK
@@ -74,14 +75,13 @@ st.set_page_config(
 # Usem el GA4 Measurement Protocol per enviar events directament des del
 # servidor Python. Això és 100% fiable: no depèn del browser de l'usuari,
 # no pot ser bloquejat per adblockers ni per les CSP headers de Streamlit Cloud.
+
 _GA4_ID         = "G-KBSGED08HM"
-#_GA4_API_SECRET = "W7GQLD0DSJiMT7CRNXbKUg"
+_GA4_API_SECRET = st.secrets["GA4_API_SECRET"]
 _GA4_ENDPOINT   = (
     f"https://www.google-analytics.com/mp/collect"
     f"?measurement_id={_GA4_ID}&api_secret={_GA4_API_SECRET}"
 )
-
-st.secrets["GA4_API_SECRET"]
 
 
 def _ga4_send(event_name: str, params: dict = None) -> None:
