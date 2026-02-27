@@ -244,6 +244,26 @@ if seccio == "💬 Consulta al entrenador":
             st.markdown(prompt)
 
         with st.chat_message("assistant"):
+            # Placeholder animat mentre la IA processa la resposta
+            thinking_placeholder = st.empty()
+            thinking_placeholder.markdown(
+                """<span style="color:#6b7280;font-size:1.1em;">
+                ⛳ <span class="dot-flashing">Pensant<span>.</span><span>.</span><span>.</span></span>
+                </span>
+                <style>
+                .dot-flashing span {
+                    animation: blink 1.2s infinite;
+                    animation-fill-mode: both;
+                }
+                .dot-flashing span:nth-child(2) { animation-delay: 0.2s; }
+                .dot-flashing span:nth-child(3) { animation-delay: 0.4s; }
+                @keyframes blink {
+                    0%,80%,100% { opacity: 0; }
+                    40%          { opacity: 1; }
+                }
+                </style>""",
+                unsafe_allow_html=True,
+            )
             try:
                 # Nova crida al model:  client.models.generate_content()
                 # - model: nom del model Gemini
@@ -275,11 +295,13 @@ if seccio == "💬 Consulta al entrenador":
                     config=chat_config,
                 )
                 answer = response.text
+                thinking_placeholder.empty()   # Elimina el "Pensant..."
                 st.markdown(answer)
                 st.session_state.gem_messages.append({"role": "assistant", "content": answer})
 
             except Exception as e:
                 err = str(e)
+                thinking_placeholder.empty()   # Elimina el "Pensant..." fins i tot en cas d'error
                 # Error 429: quota de l'API esgotada (límit de peticions per minut/dia)
                 if "429" in err or "quota" in err.lower():
                     st.error("⚠️ Quota esgotada. Espera uns minuts i torna-ho a intentar.")
