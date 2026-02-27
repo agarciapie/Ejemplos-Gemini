@@ -25,6 +25,11 @@ import time                          # Pausar l'execució mentre el servidor pro
 import tempfile                      # Crear fitxers temporals per al vídeo pujat
 import requests as _req              # Crida HTTP servidor→API per al comptador de visites
 import streamlit.components.v1 as _components  # Per injectar HTML/JS (Google Analytics)
+try:
+    from langdetect import detect as _detect_lang
+    _LANGDETECT_OK = True
+except ImportError:
+    _LANGDETECT_OK = False
 
 
 # ── CÀRREGA DEL CONEIXEMENT (KNOWLEDGE) ───────────────────────────────────────
@@ -207,6 +212,11 @@ if seccio == "💬 Consulta al entrenador":
         SYSTEM_INSTRUCTION
         + "\n\n---\nCONTINGUT DELS VIDEOS:\n"
         + KNOWLEDGE
+        + "\n\n---\n"
+        + "LANGUAGE RULE (MANDATORY): Always respond in the EXACT same language "
+        + "as the user's question. If the question is in English, respond in English. "
+        + "If in Spanish/Castilian, respond in Spanish. If in Catalan, respond in Catalan. "
+        + "Never switch language. This rule overrides everything else."
     )
 
     # Configuració del model: instrucció de sistema passada com a GenerateContentConfig
@@ -239,11 +249,28 @@ if seccio == "💬 Consulta al entrenador":
                 # - model: nom del model Gemini
                 # - contents: el missatge de l'usuari
                 # - config: inclou la instrucció de sistema amb el coneixement dels vídeos
+                # ── DETECCIÓ D'IDIOMA ─────────────────────────────────────────────
+                # Detectem l'idioma del prompt per indicar-lo explícitament
+                # al model, evitant que infereixi malament l'idioma.
+                _LANG_NAMES = {
+                    "ca": "Catalan", "es": "Spanish", "en": "English",
+                    "fr": "French",  "de": "German",  "it": "Italian",
+                    "pt": "Portuguese", "nl": "Dutch",
+                }
+                _detected = "the same language as the question"
+                if _LANGDETECT_OK and len(prompt) >= 10:
+                    try:
+                        _code = _detect_lang(prompt)
+                        _detected = _LANG_NAMES.get(_code, _code)
+                    except Exception:
+                        pass
+
                 response = client.models.generate_content(
                     model="gemini-2.5-flash",
                     contents=(
-                        f"[IMPORTANT: Respon SEMPRE en el mateix idioma que la pregunta. "
-                        f"La pregunta és: \"{prompt}\"]\n\n{prompt}"
+                        f"[SYSTEM RULE - HIGHEST PRIORITY: You MUST reply in "
+                        f"{_detected}. Do NOT change the language under any "
+                        f"circumstances. The user's question is: \"{prompt}\"]\n\n{prompt}"
                     ),
                     config=chat_config,
                 )
