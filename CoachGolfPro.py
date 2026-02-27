@@ -25,6 +25,7 @@ import time                          # Pausar l'execució mentre el servidor pro
 import tempfile                      # Crear fitxers temporals per al vídeo pujat
 import requests as _req              # Crida HTTP servidor→API per al comptador de visites
 import streamlit.components.v1 as _components  # Per injectar HTML/JS (Google Analytics)
+import uuid as _uuid                  # Per generar client_id únic per sessió (GA4)
 try:
     from langdetect import detect as _detect_lang
     _LANGDETECT_OK = True
@@ -69,26 +70,35 @@ st.set_page_config(
     layout="wide",
 )
 
-# ── GOOGLE ANALYTICS (GA4) ────────────────────────────────────────────────────
-# S'injecta el codi de seguiment de GA4 un sol cop per sessió.
-# components.html() executa el JavaScript dins d'un iframe separat
-# però l'event de pàgina (pageview) s'envia igualment a GA4.
-GA4_ID = "G-KBSGED08HM"
-if "ga_injected" not in st.session_state:
-    st.session_state.ga_injected = True
-    _components.html(
-        f"""
-        <!-- Google tag (gtag.js) -->
-        <script async src="https://www.googletagmanager.com/gtag/js?id={GA4_ID}"></script>
-        <script>
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){{dataLayer.push(arguments);}}
-          gtag('js', new Date());
-          gtag('config', '{GA4_ID}');
-        </script>
-        """,
-        height=0,
-    )
+# ── GOOGLE ANALYTICS (GA4) ─ SERVER-SIDE TRACKING ────────────────────────────
+# Usem el GA4 Measurement Protocol per enviar events directament des del
+# servidor Python. Això és 100% fiable: no depèn del browser de l'usuari,
+# no pot ser bloquejat per adblockers ni per les CSP headers de Streamlit Cloud.
+_GA4_ID         = "G-KBSGED08HM"
+_GA4_API_SECRET = "W7GQLD0DSJiMT7CRNXbKUg"
+_GA4_ENDPOINT   = (
+    f"https://www.google-analytics.com/mp/collect"
+    f"?measurement_id={_GA4_ID}&api_secret={_GA4_API_SECRET}"
+)
+
+def _ga4_send(event_name: str, params: dict = None) -> None:
+    """Envia un event a GA4 via Measurement Protocol (servidor Python)."""
+    if "ga4_client_id" not in st.session_state:
+        st.session_state.ga4_client_id = str(_uuid.uuid4())
+    payload = {
+        "client_id": st.session_state.ga4_client_id,
+        "events": [{"name": event_name, "params": params or {}}],
+    }
+    try:
+        _req.post(_GA4_ENDPOINT, json=payload, timeout=3)
+    except Exception:
+        pass  # El tracking no hauria d'aturar mai l'app
+
+# Envia el page_view una sola vegada per sessió
+if "ga4_page_viewed" not in st.session_state:
+    st.session_state.ga4_page_viewed = True
+    _ga4_send("page_view", {"page_title": "Golf Coach Pro", "page_location": "streamlit"})
+
 
 # CSS personalitzat per als colors i estil de la interfície
 st.markdown("""
@@ -298,6 +308,8 @@ if seccio == "💬 Consulta al entrenador":
                 thinking_placeholder.empty()   # Elimina el "Pensant..."
                 st.markdown(answer)
                 st.session_state.gem_messages.append({"role": "assistant", "content": answer})
+                # Tracking GA4: registra cada consulta al entrenador
+                _ga4_send("coach_query", {"language": _detected, "section": "chat"})
 
             except Exception as e:
                 err = str(e)
