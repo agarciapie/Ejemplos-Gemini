@@ -23,55 +23,36 @@ from google.genai import types       # Tipus de configuració del nou SDK
 import os                            # Operacions amb el sistema de fitxers
 import time                          # Pausar l'execució mentre el servidor processa el vídeo
 import tempfile                      # Crear fitxers temporals per al vídeo pujat
-import re                            # Expressions regulars per extreure text de CoachGolfGem.py
-import ast                           # Avaluació segura de literals Python
 import requests as _req              # Crida HTTP servidor→API per al comptador de visites
 import streamlit.components.v1 as _components  # Per injectar HTML/JS (Google Analytics)
 
 
 # ── CÀRREGA DEL CONEIXEMENT (KNOWLEDGE) ───────────────────────────────────────
-# CoachGolfGem.py conté les transcripcions dels 14 vídeos de YouTube i la
-# instrucció del sistema (SYSTEM_INSTRUCTION) com a constants Python hardcodejades.
+# coach_config.json conté les transcripcions dels vídeos de YouTube,
+# la normativa de Pitch&Putt i la instrucció de sistema (SYSTEM_INSTRUCTION).
 #
-# IMPORTANT: No importem CoachGolfGem.py com a mòdul perquè conté crides a
-# Streamlit que causarien un error si s'executessin fora de context.
-# En canvi, llegim el fitxer com a text pla i extraiem les constants amb
-# regex + ast.literal_eval (segur, no executa codi arbitrari).
+# Per actualitzar el coneixement o modificar SYSTEM_INSTRUCTION,
+# edita directament coach_config.json o torna a executar build_gem.py.
 
-def _load_gem_data():
+def _load_config():
     """
-    Llegeix KNOWLEDGE i SYSTEM_INSTRUCTION des de CoachGolfGem.py com a text pla.
+    Llegeix KNOWLEDGE i SYSTEM_INSTRUCTION des de coach_config.json.
 
     Returns:
         tuple: (knowledge: str, system_instruction: str)
                Retorna strings buits si el fitxer no existeix o hi ha error.
     """
-    gem_path = os.path.join(os.path.dirname(__file__), "CoachGolfGem.py")
-    knowledge = ""
-    system_instruction = ""
+    import json
+    config_path = os.path.join(os.path.dirname(__file__), "coach_config.json")
     try:
-        with open(gem_path, "r", encoding="utf-8") as f:
-            source = f.read()
-
-        # Cerca el bloc:  KNOWLEDGE = '...' (pot ser multilínia)
-        m = re.search(r"^KNOWLEDGE\s*=\s*(.+?)(?=^\w|\Z)", source,
-                      re.MULTILINE | re.DOTALL)
-        if m:
-            knowledge = ast.literal_eval(m.group(1).strip())
-
-        # Cerca SYSTEM_INSTRUCTION = '...'
-        m2 = re.search(r"^SYSTEM_INSTRUCTION\s*=\s*(.+?)(?=^\w|\Z)", source,
-                       re.MULTILINE | re.DOTALL)
-        if m2:
-            system_instruction = ast.literal_eval(m2.group(1).strip())
-
+        with open(config_path, "r", encoding="utf-8") as f:
+            cfg = json.load(f)
+        return cfg.get("knowledge", ""), cfg.get("system_instruction", "")
     except Exception:
-        pass  # Continua amb strings buits si el fitxer no existeix o hi ha error
-
-    return knowledge, system_instruction
+        return "", ""
 
 # S'executa una sola vegada en arrencar l'app
-KNOWLEDGE, SYSTEM_INSTRUCTION = _load_gem_data()
+KNOWLEDGE, SYSTEM_INSTRUCTION = _load_config()
 
 
 # ── CONFIGURACIÓ DE LA PÀGINA ─────────────────────────────────────────────────

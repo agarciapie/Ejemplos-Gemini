@@ -213,3 +213,16 @@ with open('CoachGolfGem.py', 'w', encoding='utf-8') as f:
     f.write(final_code)
 
 print(f'CoachGolfGem.py generat correctament! ({len(final_code):,} bytes)')
+
+# ── GENERACIÓ DE coach_config.json ────────────────────────────────────────────
+# Fitxer de configuració independent llegit per CoachGolfPro.py.
+# Permet modificar SYSTEM_INSTRUCTION sense tocar CoachGolfGem.py.
+config = {
+    "system_instruction": SYSTEM_INSTRUCTION,
+    "knowledge": knowledge,
+}
+config_path = os.path.join(os.path.dirname(__file__), 'coach_config.json')
+with open(config_path, 'w', encoding='utf-8') as f:
+    json.dump(config, f, ensure_ascii=False, indent=2)
+
+print(f'coach_config.json generat correctament! ({os.path.getsize(config_path):,} bytes)')
