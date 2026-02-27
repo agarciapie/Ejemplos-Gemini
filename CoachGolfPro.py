@@ -75,11 +75,14 @@ st.set_page_config(
 # servidor Python. Això és 100% fiable: no depèn del browser de l'usuari,
 # no pot ser bloquejat per adblockers ni per les CSP headers de Streamlit Cloud.
 _GA4_ID         = "G-KBSGED08HM"
-_GA4_API_SECRET = "W7GQLD0DSJiMT7CRNXbKUg"
+#_GA4_API_SECRET = "W7GQLD0DSJiMT7CRNXbKUg"
 _GA4_ENDPOINT   = (
     f"https://www.google-analytics.com/mp/collect"
     f"?measurement_id={_GA4_ID}&api_secret={_GA4_API_SECRET}"
 )
+
+st.secrets["GA4_API_SECRET"]
+
 
 def _ga4_send(event_name: str, params: dict = None) -> None:
     """Envia un event a GA4 via Measurement Protocol (servidor Python)."""
