@@ -241,7 +241,10 @@ if seccio == "💬 Consulta al entrenador":
                 # - config: inclou la instrucció de sistema amb el coneixement dels vídeos
                 response = client.models.generate_content(
                     model="gemini-2.5-flash",
-                    contents=prompt,
+                    contents=(
+                        f"[IMPORTANT: Respon SEMPRE en el mateix idioma que la pregunta. "
+                        f"La pregunta és: \"{prompt}\"]\n\n{prompt}"
+                    ),
                     config=chat_config,
                 )
                 answer = response.text
