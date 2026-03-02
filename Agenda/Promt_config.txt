@@ -1,0 +1,13 @@
+Crea una opcio de configuracio on:
+1. Escull el tipus de configuracio. Les opcions son:
+Modalitat Stroke
+ - Intercamps Stroke Play - 1a Divisió
+ - Intercamps Stroke Play - 2a Divisió
+ - Intercamps Stroke Play - 3a Divisió
+ - Intercamps Stroke Play - 4a Divisió
+Modalitat Match
+ - Intercamps Match Play - 1a Divisió
+ - Intercamps Match Play - 2a Divisió
+ - Intercamps Match Play - 3a Divisió
+ - Intercamps Match Play - 4a Divisió
+2. Nom del grup de chat a Whatsapp

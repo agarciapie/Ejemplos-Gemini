@@ -28,8 +28,9 @@ import pdfplumber
 from streamlit_calendar import calendar as st_calendar
 
 # ── RUTES ───────────────────────────────────────────────────────────────────────
-BASE_DIR   = os.path.dirname(__file__)
+BASE_DIR    = os.path.dirname(__file__)
 EVENTS_JSON = os.path.join(BASE_DIR, "events.json")
+CONFIG_JSON = os.path.join(BASE_DIR, "config.json")
 
 # ── CONFIGURACIÓ DE LA PÀGINA ───────────────────────────────────────────────────
 st.set_page_config(
@@ -132,6 +133,24 @@ if not API_KEY:
             break
 
 
+# ── OPCIONS DE CONFIGURACIÓ ──────────────────────────────────────────────────
+
+COMPETICIO_OPCIONS = {
+    "Modalitat Stroke": [
+        "Intercamps Stroke Play - 1a Divisió",
+        "Intercamps Stroke Play - 2a Divisió",
+        "Intercamps Stroke Play - 3a Divisió",
+        "Intercamps Stroke Play - 4a Divisió",
+    ],
+    "Modalitat Match": [
+        "Intercamps Match Play - 1a Divisió",
+        "Intercamps Match Play - 2a Divisió",
+        "Intercamps Match Play - 3a Divisió",
+        "Intercamps Match Play - 4a Divisió",
+    ],
+}
+
+
 # ── FUNCIONS AUXILIARS ────────────────────────────────────────────────────────
 
 def load_events() -> list[dict]:
@@ -149,6 +168,23 @@ def save_events(events: list[dict]) -> None:
     """Guarda la llista d'esdeveniments al fitxer JSON."""
     with open(EVENTS_JSON, "w", encoding="utf-8") as f:
         json.dump(events, f, ensure_ascii=False, indent=2)
+
+
+def load_config() -> dict:
+    """Carrega la configuració des del fitxer config.json."""
+    if os.path.exists(CONFIG_JSON):
+        try:
+            with open(CONFIG_JSON, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {"modalitat": "", "competicio": "", "whatsapp_grup": ""}
+
+
+def save_config(cfg: dict) -> None:
+    """Guarda la configuració al fitxer config.json."""
+    with open(CONFIG_JSON, "w", encoding="utf-8") as f:
+        json.dump(cfg, f, ensure_ascii=False, indent=2)
 
 
 def extract_pdf_text(uploaded_file) -> str:
@@ -278,9 +314,24 @@ with st.sidebar:
     st.markdown("---")
     seccio = st.radio(
         "Navegació:",
-        ["📅 Calendari", "📄 Importar PDF", "📋 Llista d'Events"],
+        ["📅 Calendari", "📄 Importar PDF", "📋 Llista d'Events", "⚙️ Configuració"],
         index=0,
     )
+    st.markdown("---")
+    # Mostra la configuració activa al sidebar
+    cfg_sidebar = load_config()
+    if cfg_sidebar.get("competicio"):
+        st.markdown(
+            f"<div style='color:#bbf7d0;font-size:0.8rem;'>🏌️ "
+            f"<b>{cfg_sidebar['competicio']}</b></div>",
+            unsafe_allow_html=True,
+        )
+    if cfg_sidebar.get("whatsapp_grup"):
+        st.markdown(
+            f"<div style='color:#86efac;font-size:0.8rem;'>💬 "
+            f"{cfg_sidebar['whatsapp_grup']}</div>",
+            unsafe_allow_html=True,
+        )
     st.markdown("---")
     events_stored = load_events()
     total = len(events_stored)
@@ -566,3 +617,135 @@ elif seccio == "📋 Llista d'Events":
                     f"</div>",
                     unsafe_allow_html=True,
                 )
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SECCIÓ 4: CONFIGURACIÓ
+# ══════════════════════════════════════════════════════════════════════════════
+
+elif seccio == "⚙️ Configuració":
+
+    st.title("⚙️ Configuració")
+    st.caption("Defineix la divisió i el grup de WhatsApp per a cadascuna de les modalitats.")
+
+    cfg = load_config()
+
+    # ── Dues columnes, una per modalitat ────────────────────────────────────────
+    col_stroke, col_spacer, col_match = st.columns([5, 1, 5])
+
+    # ── MODALITAT STROKE ────────────────────────────────────────────────────────
+    with col_stroke:
+        st.markdown(
+            "<div style='background:#f0fdf4;border:2px solid #86efac;"
+            "border-radius:12px;padding:1.2rem 1.4rem;'>"
+            "<h3 style='color:#14532d;margin-top:0'>🏌️ Modalitat Stroke</h3>",
+            unsafe_allow_html=True,
+        )
+
+        stroke_cfg      = cfg.get("stroke", {})
+        stroke_divisions = COMPETICIO_OPCIONS["Modalitat Stroke"]
+        stroke_actual   = stroke_cfg.get("competicio") or stroke_divisions[0]
+
+        stroke_comp = st.selectbox(
+            "Divisió:",
+            stroke_divisions,
+            index=stroke_divisions.index(stroke_actual)
+                  if stroke_actual in stroke_divisions else 0,
+            key="cfg_stroke_comp",
+        )
+        stroke_wa = st.text_input(
+            "Grup de WhatsApp:",
+            value=stroke_cfg.get("whatsapp_grup") or "",
+            placeholder="Ex: Intercamps Stroke 2026 – 1a Div",
+            key="cfg_stroke_wa",
+        )
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    # ── MODALITAT MATCH ─────────────────────────────────────────────────────────
+    with col_match:
+        st.markdown(
+            "<div style='background:#eff6ff;border:2px solid #93c5fd;"
+            "border-radius:12px;padding:1.2rem 1.4rem;'>"
+            "<h3 style='color:#1e3a8a;margin-top:0'>🏌️ Modalitat Match</h3>",
+            unsafe_allow_html=True,
+        )
+
+        match_cfg       = cfg.get("match", {})
+        match_divisions = COMPETICIO_OPCIONS["Modalitat Match"]
+        match_actual    = match_cfg.get("competicio") or match_divisions[0]
+
+        match_comp = st.selectbox(
+            "Divisió:",
+            match_divisions,
+            index=match_divisions.index(match_actual)
+                  if match_actual in match_divisions else 0,
+            key="cfg_match_comp",
+        )
+        match_wa = st.text_input(
+            "Grup de WhatsApp:",
+            value=match_cfg.get("whatsapp_grup") or "",
+            placeholder="Ex: Intercamps Match 2026 – 1a Div",
+            key="cfg_match_wa",
+        )
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown("---")
+
+    # ── Botons guardar / esborrar ────────────────────────────────────────────────
+    col_save, col_reset = st.columns([2, 1])
+    with col_save:
+        if st.button("💾 Guardar configuració", use_container_width=True, key="btn_save_cfg"):
+            new_cfg = {
+                "stroke": {
+                    "competicio":    stroke_comp,
+                    "whatsapp_grup": stroke_wa.strip(),
+                },
+                "match": {
+                    "competicio":    match_comp,
+                    "whatsapp_grup": match_wa.strip(),
+                },
+            }
+            save_config(new_cfg)
+            st.success("✅ Configuració guardada correctament!")
+            st.rerun()
+    with col_reset:
+        if st.button("🗑️ Esborrar config", use_container_width=True, key="btn_reset_cfg"):
+            save_config({"stroke": {}, "match": {}})
+            st.info("Configuració restablerta.")
+            st.rerun()
+
+    # ── Resum de la configuració guardada ───────────────────────────────────────
+    cfg_saved = load_config()
+    stroke_s  = cfg_saved.get("stroke", {})
+    match_s   = cfg_saved.get("match",  {})
+
+    if stroke_s.get("competicio") or match_s.get("competicio"):
+        st.markdown("---")
+        st.markdown("### 📋 Configuració actual guardada")
+        rc1, rc2 = st.columns(2)
+
+        with rc1:
+            if stroke_s.get("competicio"):
+                st.markdown(
+                    "<div class='event-card' style='border-left-color:#15803d;'>"
+                    f"<div class='event-title'>🏌️ {stroke_s['competicio']}</div>"
+                    f"<div class='event-meta'>🎯 Modalitat Stroke</div>"
+                    + (f"<div class='event-meta'>💬 {stroke_s['whatsapp_grup']}</div>"
+                       if stroke_s.get("whatsapp_grup") else "")
+                    + "</div>",
+                    unsafe_allow_html=True,
+                )
+
+        with rc2:
+            if match_s.get("competicio"):
+                st.markdown(
+                    "<div class='event-card' style='border-left-color:#2563eb;'>"
+                    f"<div class='event-title'>🏌️ {match_s['competicio']}</div>"
+                    f"<div class='event-meta'>🎯 Modalitat Match</div>"
+                    + (f"<div class='event-meta'>💬 {match_s['whatsapp_grup']}</div>"
+                       if match_s.get("whatsapp_grup") else "")
+                    + "</div>",
+                    unsafe_allow_html=True,
+                )
+
+
