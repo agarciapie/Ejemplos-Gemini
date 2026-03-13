@@ -1,0 +1,92 @@
+2026/03/13-18:58:45.574 159c Reusing MANIFEST C:\Users\agapi\OneDrive\Escriptori\Ejemplos\Ejemplos Gemini\Agenda\chrome_wa_profile\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/03/13-18:58:45.574 159c Recovering log #88
+2026/03/13-18:58:45.627 159c Reusing old log C:\Users\agapi\OneDrive\Escriptori\Ejemplos\Ejemplos Gemini\Agenda\chrome_wa_profile\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/000088.log 
+2026/03/13-18:58:59.638 159c Level-0 table #94: started
+2026/03/13-18:58:59.668 159c Level-0 table #94: 981968 bytes OK
+2026/03/13-18:58:59.669 159c Delete type=0 #88
+2026/03/13-18:58:59.670 159c Manual compaction at level-0 from '\x00$\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00%\x00\x00\x00' @ 0 : 0; will stop at (end)
+2026/03/13-18:58:59.731 4300 Compacting 1@1 + 2@2 files
+2026/03/13-18:58:59.815 4300 Generated table #95@1: 37248 keys, 2226075 bytes
+2026/03/13-18:58:59.860 4300 Generated table #96@1: 29085 keys, 1311185 bytes
+2026/03/13-18:58:59.861 4300 Compacted 1@1 + 2@2 files => 3537260 bytes
+2026/03/13-18:58:59.861 4300 compacted to: files[ 0 0 2 0 0 0 0 ]
+2026/03/13-18:58:59.862 4300 Delete type=2 #90
+2026/03/13-18:58:59.862 4300 Delete type=2 #91
+2026/03/13-18:58:59.862 4300 Delete type=2 #94
+2026/03/13-18:59:10.931 4300 Level-0 table #98: started
+2026/03/13-18:59:10.965 4300 Level-0 table #98: 1118082 bytes OK
+2026/03/13-18:59:10.967 4300 Delete type=0 #93
+2026/03/13-18:59:10.968 4300 Compacting 1@1 + 2@2 files
+2026/03/13-18:59:11.028 4300 Generated table #99@1: 42331 keys, 2231211 bytes
+2026/03/13-18:59:11.066 4300 Generated table #100@1: 37998 keys, 1601765 bytes
+2026/03/13-18:59:11.067 4300 Compacted 1@1 + 2@2 files => 3832976 bytes
+2026/03/13-18:59:11.068 4300 compacted to: files[ 0 0 2 0 0 0 0 ]
+2026/03/13-18:59:11.068 4300 Delete type=2 #95
+2026/03/13-18:59:11.068 4300 Delete type=2 #96
+2026/03/13-18:59:11.069 4300 Delete type=2 #98
+2026/03/13-18:59:15.141 4300 Level-0 table #102: started
+2026/03/13-18:59:15.165 4300 Level-0 table #102: 1204156 bytes OK
+2026/03/13-18:59:15.167 4300 Delete type=0 #97
+2026/03/13-18:59:15.169 4300 Compacting 1@1 + 2@2 files
+2026/03/13-18:59:15.239 4300 Generated table #103@1: 43434 keys, 2232090 bytes
+2026/03/13-18:59:15.289 4300 Generated table #104@1: 26374 keys, 2193826 bytes
+2026/03/13-18:59:15.310 4300 Generated table #105@1: 20058 keys, 357768 bytes
+2026/03/13-18:59:15.310 4300 Compacted 1@1 + 2@2 files => 4783684 bytes
+2026/03/13-18:59:15.311 4300 compacted to: files[ 0 0 3 0 0 0 0 ]
+2026/03/13-18:59:15.311 4300 Delete type=2 #99
+2026/03/13-18:59:15.311 4300 Delete type=2 #100
+2026/03/13-18:59:15.311 4300 Delete type=2 #102
+2026/03/13-18:59:15.326 4300 Level-0 table #107: started
+2026/03/13-18:59:15.346 4300 Level-0 table #107: 1331301 bytes OK
+2026/03/13-18:59:15.348 4300 Delete type=0 #101
+2026/03/13-18:59:15.350 4300 Compacting 1@1 + 2@2 files
+2026/03/13-18:59:15.415 4300 Generated table #108@1: 44759 keys, 2233188 bytes
+2026/03/13-18:59:15.444 4300 Generated table #109@1: 8096 keys, 2162035 bytes
+2026/03/13-18:59:15.455 4300 Level-0 table #112: started
+2026/03/13-18:59:15.475 4300 Level-0 table #112: 1489201 bytes OK
+2026/03/13-18:59:15.476 4300 Delete type=0 #106
+2026/03/13-18:59:15.499 4300 Generated table #110@1: 26817 keys, 1361594 bytes
+2026/03/13-18:59:15.499 4300 Compacted 1@1 + 2@2 files => 5756817 bytes
+2026/03/13-18:59:15.500 4300 compacted to: files[ 1 0 4 0 0 0 0 ]
+2026/03/13-18:59:15.501 4300 Delete type=2 #103
+2026/03/13-18:59:15.501 4300 Delete type=2 #104
+2026/03/13-18:59:15.501 4300 Delete type=2 #107
+2026/03/13-18:59:15.503 4300 Moved #112 to level-1 1489201 bytes OK: files[ 0 1 4 0 0 0 0 ]
+2026/03/13-18:59:15.505 4300 Compacting 1@1 + 4@2 files
+2026/03/13-18:59:15.564 4300 Generated table #113@1: 47195 keys, 2224995 bytes
+2026/03/13-18:59:15.597 4300 Generated table #114@1: 8542 keys, 2168825 bytes
+2026/03/13-18:59:15.610 4300 Level-0 table #117: started
+2026/03/13-18:59:15.636 4300 Level-0 table #117: 1407659 bytes OK
+2026/03/13-18:59:15.638 4300 Delete type=0 #111
+2026/03/13-18:59:15.668 4300 Generated table #115@1: 18754 keys, 2209529 bytes
+2026/03/13-18:59:15.704 4300 Generated table #118@1: 34868 keys, 992792 bytes
+2026/03/13-18:59:15.704 4300 Compacted 1@1 + 4@2 files => 7596141 bytes
+2026/03/13-18:59:15.705 4300 compacted to: files[ 1 0 4 0 0 0 0 ]
+2026/03/13-18:59:15.705 4300 Delete type=2 #105
+2026/03/13-18:59:15.705 4300 Delete type=2 #108
+2026/03/13-18:59:15.705 4300 Delete type=2 #109
+2026/03/13-18:59:15.706 4300 Delete type=2 #110
+2026/03/13-18:59:15.706 4300 Delete type=2 #112
+2026/03/13-18:59:15.709 3808 Moved #117 to level-1 1407659 bytes OK: files[ 0 1 4 0 0 0 0 ]
+2026/03/13-18:59:15.710 4300 Compacting 1@1 + 4@2 files
+2026/03/13-18:59:15.788 4300 Generated table #119@1: 40893 keys, 2229387 bytes
+2026/03/13-18:59:15.813 4300 Generated table #120@1: 2221 keys, 2150996 bytes
+2026/03/13-18:59:15.851 4300 Generated table #121@1: 13300 keys, 2199001 bytes
+2026/03/13-18:59:15.889 4300 Generated table #122@1: 43970 keys, 1416489 bytes
+2026/03/13-18:59:15.889 4300 Compacted 1@1 + 4@2 files => 7995873 bytes
+2026/03/13-18:59:15.890 4300 compacted to: files[ 0 0 4 0 0 0 0 ]
+2026/03/13-18:59:16.171 3808 Level-0 table #124: started
+2026/03/13-18:59:16.197 3808 Level-0 table #124: 808542 bytes OK
+2026/03/13-18:59:16.198 3808 Delete type=2 #113
+2026/03/13-18:59:16.198 3808 Delete type=2 #114
+2026/03/13-18:59:16.198 3808 Delete type=2 #115
+2026/03/13-18:59:16.198 3808 Delete type=0 #116
+2026/03/13-18:59:16.198 3808 Delete type=2 #117
+2026/03/13-18:59:16.198 3808 Delete type=2 #118
+2026/03/13-18:59:16.216 3808 Compacting 1@1 + 4@2 files
+2026/03/13-18:59:16.294 3808 Generated table #125@1: 40398 keys, 2228234 bytes
+2026/03/13-18:59:16.322 3808 Generated table #126@1: 2219 keys, 2152698 bytes
+2026/03/13-18:59:16.366 3808 Generated table #127@1: 13373 keys, 2198310 bytes
+2026/03/13-18:59:16.413 3808 Generated table #128@1: 51024 keys, 1623988 bytes
+2026/03/13-18:59:16.413 3808 Compacted 1@1 + 4@2 files => 8203230 bytes
+2026/03/13-18:59:16.414 3808 compacted to: files[ 0 0 4 0 0 0 0 ]

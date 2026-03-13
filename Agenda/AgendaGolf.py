@@ -877,7 +877,7 @@ elif seccio == "⚙️ Configuració":
             )
 
     st.markdown("")
-    col_notif1, col_notif2 = st.columns([2, 2])
+    col_notif1, col_notif2, col_notif3 = st.columns(3)
 
     with col_notif1:
         if st.button("🔔 Enviar notificacions ara", key="btn_send_notif", use_container_width=True):
@@ -885,9 +885,8 @@ elif seccio == "⚙️ Configuració":
                 try:
                     result = subprocess.run(
                         [sys.executable, NOTIF_PY],
-                        capture_output=True,
-                        text=True,
-                        timeout=120,
+                        capture_output=True, text=True, timeout=120,
+                        encoding="utf-8", errors="replace",
                     )
                     output = result.stdout + result.stderr
                     if result.returncode == 0:
@@ -904,17 +903,77 @@ elif seccio == "⚙️ Configuració":
                     st.error(f"❌ Error: {e}")
 
     with col_notif2:
-        if st.button("🧪 Mode Dry-Run (sense enviar)", key="btn_dryrun_notif", use_container_width=True):
-            with st.spinner("🧪 Simulant enviament..."):
+        # Cerca el proper event amb grup configurat per mostrar al tooltip del botó
+        def _find_next_for_ui(evs, cfg):
+            today_ui = date.today()
+            for ev in sorted(evs, key=lambda e: e.get("date", "")):
+                try:
+                    ev_d = datetime.strptime(ev["date"], "%Y-%m-%d").date()
+                except ValueError:
+                    continue
+                if ev_d < today_ui:
+                    continue
+                title_l = ev.get("title", "").lower()
+                for mk in ("stroke", "match"):
+                    g = cfg.get(mk, {}).get("whatsapp_grup", "")
+                    if g and mk in title_l:
+                        return ev, g
+            return None, None
+
+        next_ev_ui, next_grup_ui = _find_next_for_ui(all_events_notif, cfg_notif)
+
+        if next_ev_ui:
+            short_title = next_ev_ui["title"][:28] + ("…" if len(next_ev_ui["title"]) > 28 else "")
+            test_label  = f"🧪 TEST → {short_title}"
+            help_test   = (
+                f"Envia ara la notificació de **{next_ev_ui['title']}** "
+                f"({next_ev_ui['date']}) al grup **{next_grup_ui}**, "
+                f"sense esperar els 7 dies."
+            )
+        else:
+            test_label = "🧪 Test (cap event disponible)"
+            help_test  = "No hi ha cap event futur amb grup de WhatsApp configurat."
+
+        if st.button(test_label, key="btn_test_notif", use_container_width=True,
+                     disabled=(next_ev_ui is None), help=help_test):
+            with st.spinner("🧪 Enviant notificació de TEST..."):
+                try:
+                    result = subprocess.run(
+                        [sys.executable, NOTIF_PY, "--test"],
+                        capture_output=True, text=True, timeout=120,
+                        encoding="utf-8", errors="replace",
+                    )
+                    output = result.stdout + result.stderr
+                    if result.returncode == 0:
+                        st.success(
+                            f"✅ TEST enviat! Comprova el grup **{next_grup_ui}** a WhatsApp."
+                        )
+                    else:
+                        st.error(
+                            "❌ El TEST ha fallat. Causa més probable: el **nom del grup** "
+                            f"(`{next_grup_ui}`) no coincideix exactament amb el nom que apareix "
+                            "a WhatsApp, o WhatsApp Web no està obert al navegador."
+                        )
+                    if output.strip():
+                        st.code(output, language=None)
+                except FileNotFoundError:
+                    st.error(f"❌ No s'ha trobat el script: {NOTIF_PY}")
+                except subprocess.TimeoutExpired:
+                    st.error("❌ El script ha superat el temps màxim (120s).")
+                except Exception as e:
+                    st.error(f"❌ Error: {e}")
+
+    with col_notif3:
+        if st.button("🔍 Dry-Run (sense enviar)", key="btn_dryrun_notif", use_container_width=True):
+            with st.spinner("🔍 Simulant enviament..."):
                 try:
                     result = subprocess.run(
                         [sys.executable, NOTIF_PY, "--dry-run"],
-                        capture_output=True,
-                        text=True,
-                        timeout=30,
+                        capture_output=True, text=True, timeout=30,
+                        encoding="utf-8", errors="replace",
                     )
                     output = result.stdout + result.stderr
-                    st.info("🧪 Resultat del Dry-Run (cap missatge enviat)")
+                    st.info("🔍 Resultat del Dry-Run (cap missatge enviat)")
                     if output.strip():
                         st.code(output, language=None)
                 except Exception as e:
