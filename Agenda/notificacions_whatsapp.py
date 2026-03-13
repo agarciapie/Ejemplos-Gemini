@@ -4,20 +4,25 @@ notificacions_whatsapp.py
 Script autònom que llegeix events.json i config.json i envia
 un missatge de WhatsApp al grup corresponent 7 dies abans de cada event.
 
-Ús:
-  python notificacions_whatsapp.py            → Envia les notificacions pendents
-  python notificacions_whatsapp.py --dry-run  → Mostra els missatges sense enviar
+Us:
+  python notificacions_whatsapp.py            -> Envia les notificacions pendents
+  python notificacions_whatsapp.py --dry-run  -> Mostra els missatges sense enviar
 
 Requeriments:
   pip install pywhatkit
 
-Configura la tasca diàalready Windows amb:
+Configura la tasca diaria a Windows amb:
   executar_notificacions.bat
 """
 
+# ── FORÇAR UTF-8 A WINDOWS ──────────────────────────────────────────────────
+import sys
+import io
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
+
 import json
 import os
-import sys
 import time
 from datetime import date, datetime, timedelta
 
