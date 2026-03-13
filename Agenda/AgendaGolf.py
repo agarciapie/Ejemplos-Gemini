@@ -23,7 +23,7 @@ from google.genai import types
 import os
 import json
 import re
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import pdfplumber
 from streamlit_calendar import calendar as st_calendar
 
@@ -377,64 +377,102 @@ if seccio == "📅 Calendari":
             unsafe_allow_html=True,
         )
     else:
-        cal_events = events_to_calendar_format(events_stored)
+        # ── Filtra els events segons la configuració activa ──────────────────
+        cfg_cal      = load_config()
+        stroke_cat   = cfg_cal.get("stroke", {}).get("competicio", "")
+        match_cat    = cfg_cal.get("match",  {}).get("competicio", "")
 
-        # Opcions del calendari
-        cal_options = {
-            "initialView": "dayGridMonth",
-            "headerToolbar": {
-                "left":   "prev,next today",
-                "center": "title",
-                "right":  "dayGridMonth,timeGridWeek,listMonth",
-            },
-            "locale": "ca",
-            "buttonText": {
-                "today":     "Avui",
-                "month":     "Mes",
-                "week":      "Setmana",
-                "list":      "Llista",
-            },
-            "eventColor": "#15803d",
-            "height": 600,
-            "selectable": True,
-            "editable":   False,
-        }
+        # Construïm la llista de paraules clau de les categories actives
+        # Exemple: "Intercamps Stroke Play - 3a Divisió" → busquem "Stroke Play - 3a Divisió"
+        keywords = []
+        if stroke_cat:
+            keywords.append(stroke_cat)
+        if match_cat:
+            keywords.append(match_cat)
 
-        # Estil personalitzat per al calendari
-        custom_css = """
-        .fc-toolbar-title { color: #14532d !important; font-weight: 700; }
-        .fc-button-primary { background: #15803d !important; border-color: #166534 !important; }
-        .fc-button-primary:hover { background: #166534 !important; }
-        .fc-daygrid-event { border-radius: 6px !important; font-weight: 500; }
-        .fc-list-event-title { font-weight: 600; }
-        """
+        if keywords:
+            filtered_events = [
+                ev for ev in events_stored
+                if any(kw.lower() in ev["title"].lower() for kw in keywords)
+            ]
+            # Informa sobre el filtre aplicat
+            cats_html = " &nbsp;·&nbsp; ".join(
+                f"<b>{k}</b>" for k in keywords
+            )
+            st.markdown(
+                f"<div class='info-box' style='margin-bottom:1rem'>"
+                f"🔍 Mostrant únicament: {cats_html}</div>",
+                unsafe_allow_html=True,
+            )
+        else:
+            filtered_events = events_stored
+            st.info("ℹ️ No hi ha cap categoria configurada. Mostrarem tots els events. "
+                    "Ve a **⚙️ Configuració** per seleccionar la teva divisió.")
 
-        result = st_calendar(
-            events=cal_events,
-            options=cal_options,
-            custom_css=custom_css,
-            key="agenda_calendar",
-        )
+        if not filtered_events:
+            st.markdown(
+                "<div class='info-box'>No hi ha events per a la categoria configurada.</div>",
+                unsafe_allow_html=True,
+            )
+        else:
+            cal_events = events_to_calendar_format(filtered_events)
 
-        # Panell de detalls quan es clica un event
-        if result and result.get("eventClick"):
-            props = result["eventClick"]["event"].get("extendedProps", {})
-            idx   = props.get("idx", -1)
+            # Opcions del calendari
+            cal_options = {
+                "initialView": "dayGridMonth",
+                "headerToolbar": {
+                    "left":   "prev,next today",
+                    "center": "title",
+                    "right":  "dayGridMonth,timeGridWeek,listMonth",
+                },
+                "locale": "ca",
+                "buttonText": {
+                    "today":     "Avui",
+                    "month":     "Mes",
+                    "week":      "Setmana",
+                    "list":      "Llista",
+                },
+                "eventColor": "#15803d",
+                "height": 600,
+                "selectable": True,
+                "editable":   False,
+            }
 
-            if 0 <= idx < len(events_stored):
-                ev = events_stored[idx]
-                with st.expander(f"📌 {ev['title']}", expanded=True):
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.markdown(f"**📆 Data:** {ev['date']}")
-                        if ev.get("time"):
-                            st.markdown(f"**🕐 Hora:** {ev['time']}")
-                    with col2:
-                        if ev.get("location"):
-                            st.markdown(f"**📍 Lloc:** {ev['location']}")
-                    if ev.get("description"):
-                        st.markdown(f"**ℹ️ Descripció:**")
-                        st.info(ev["description"])
+            # Estil personalitzat per al calendari
+            custom_css = """
+            .fc-toolbar-title { color: #14532d !important; font-weight: 700; }
+            .fc-button-primary { background: #15803d !important; border-color: #166534 !important; }
+            .fc-button-primary:hover { background: #166534 !important; }
+            .fc-daygrid-event { border-radius: 6px !important; font-weight: 500; }
+            .fc-list-event-title { font-weight: 600; }
+            """
+
+            result = st_calendar(
+                events=cal_events,
+                options=cal_options,
+                custom_css=custom_css,
+                key="agenda_calendar",
+            )
+
+            # Panell de detalls quan es clica un event
+            if result and result.get("eventClick"):
+                props = result["eventClick"]["event"].get("extendedProps", {})
+                idx   = props.get("idx", -1)
+
+                if 0 <= idx < len(filtered_events):
+                    ev = filtered_events[idx]
+                    with st.expander(f"📌 {ev['title']}", expanded=True):
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            st.markdown(f"**📆 Data:** {ev['date']}")
+                            if ev.get("time"):
+                                st.markdown(f"**🕐 Hora:** {ev['time']}")
+                        with col2:
+                            if ev.get("location"):
+                                st.markdown(f"**📍 Lloc:** {ev['location']}")
+                        if ev.get("description"):
+                            st.markdown(f"**ℹ️ Descripció:**")
+                            st.info(ev["description"])
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -748,4 +786,158 @@ elif seccio == "⚙️ Configuració":
                     unsafe_allow_html=True,
                 )
 
+    # ── SECCIÓ NOTIFICACIONS WHATSAPP ───────────────────────────────────────────
+    st.markdown("---")
+    st.markdown("### 🔔 Notificacions WhatsApp")
+    st.caption("Events que rebran un avís per WhatsApp en els propers dies.")
+
+    import subprocess
+    import sys
+
+    NOTIF_LOG  = os.path.join(BASE_DIR, "notificacions_log.json")
+    NOTIF_PY   = os.path.join(BASE_DIR, "notificacions_whatsapp.py")
+    DIES_AVIS  = 7
+
+    def load_notif_log() -> dict:
+        if os.path.exists(NOTIF_LOG):
+            try:
+                with open(NOTIF_LOG, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception:
+                pass
+        return {}
+
+    def get_group_for_event_ui(ev: dict, cfg_now: dict) -> tuple:
+        title_lower = ev.get("title", "").lower()
+        for mod_key in ("stroke", "match"):
+            m = cfg_now.get(mod_key, {})
+            grup = m.get("whatsapp_grup", "")
+            if not grup:
+                continue
+            if mod_key in title_lower:
+                return (grup, mod_key.capitalize())
+        return ("", "")
+
+    all_events_notif = load_events()
+    cfg_notif        = load_config()
+    log_notif        = load_notif_log()
+    today_notif      = date.today()
+
+    # Mostra els propers DIES_AVIS dies + 14 dies per veure el que s'avisarà avui i aviat
+    upcoming = []
+    for ev in all_events_notif:
+        try:
+            ev_date = datetime.strptime(ev["date"], "%Y-%m-%d").date()
+        except ValueError:
+            continue
+        days_left = (ev_date - today_notif).days
+        if 0 <= days_left <= 14:
+            grup, modalitat = get_group_for_event_ui(ev, cfg_notif)
+            key_notif = f"{ev['date']}|{ev['title']}"
+            ja_enviat = (log_notif.get(key_notif) == today_notif.strftime("%Y-%m-%d"))
+            upcoming.append({
+                "ev": ev, "days_left": days_left,
+                "grup": grup, "modalitat": modalitat,
+                "ja_enviat": ja_enviat,
+                "envia_avui": days_left == DIES_AVIS,
+            })
+
+    if not upcoming:
+        st.info("ℹ️ No hi ha events en els propers 14 dies per a les modalitats configurades.")
+    else:
+        for item in upcoming:
+            ev         = item["ev"]
+            days_left  = item["days_left"]
+            grup       = item["grup"] or "—"
+            modalitat  = item["modalitat"] or "—"
+            ja_enviat  = item["ja_enviat"]
+            envia_avui = item["envia_avui"]
+
+            if days_left == 0:
+                emoji_dia = "🟥"
+                label_dia = "**AVUI**"
+            elif days_left == DIES_AVIS:
+                emoji_dia = "🔔"
+                label_dia = f"En **{days_left}** dies → **S'envia avís avui!**"
+            else:
+                emoji_dia = "📅"
+                label_dia = f"En **{days_left}** dies"
+
+            estat_badge = "✅ Ja enviat" if ja_enviat else ("🔔 Pendent" if envia_avui else "")
+            estat_color = "#15803d" if ja_enviat else "#dc2626"
+
+            st.markdown(
+                f"<div class='event-card'>"
+                f"<div class='event-title'>{emoji_dia} {ev['title']}</div>"
+                f"<div class='event-meta'>📆 {ev['date']} &nbsp;·&nbsp; {label_dia}</div>"
+                f"<div class='event-meta'>💬 Grup: <b>{grup}</b> &nbsp;·&nbsp; 🎯 {modalitat}"
+                + (f" &nbsp;·&nbsp; <span style='color:{estat_color};font-weight:600'>{estat_badge}</span>" if estat_badge else "")
+                + "</div></div>",
+                unsafe_allow_html=True,
+            )
+
+    st.markdown("")
+    col_notif1, col_notif2 = st.columns([2, 2])
+
+    with col_notif1:
+        if st.button("🔔 Enviar notificacions ara", key="btn_send_notif", use_container_width=True):
+            with st.spinner("📤 Executant el script de notificacions..."):
+                try:
+                    result = subprocess.run(
+                        [sys.executable, NOTIF_PY],
+                        capture_output=True,
+                        text=True,
+                        timeout=120,
+                    )
+                    output = result.stdout + result.stderr
+                    if result.returncode == 0:
+                        st.success("✅ Script executat correctament!")
+                    else:
+                        st.warning("⚠️ El script ha acabat amb errors. Revisa la sortida.")
+                    if output.strip():
+                        st.code(output, language=None)
+                except FileNotFoundError:
+                    st.error(f"❌ No s'ha trobat el script: {NOTIF_PY}")
+                except subprocess.TimeoutExpired:
+                    st.error("❌ El script ha superat el temps màxim (120s).")
+                except Exception as e:
+                    st.error(f"❌ Error: {e}")
+
+    with col_notif2:
+        if st.button("🧪 Mode Dry-Run (sense enviar)", key="btn_dryrun_notif", use_container_width=True):
+            with st.spinner("🧪 Simulant enviament..."):
+                try:
+                    result = subprocess.run(
+                        [sys.executable, NOTIF_PY, "--dry-run"],
+                        capture_output=True,
+                        text=True,
+                        timeout=30,
+                    )
+                    output = result.stdout + result.stderr
+                    st.info("🧪 Resultat del Dry-Run (cap missatge enviat)")
+                    if output.strip():
+                        st.code(output, language=None)
+                except Exception as e:
+                    st.error(f"❌ Error: {e}")
+
+    # ── Historial d'enviaments ────────────────────────────────────────────────
+    if log_notif:
+        with st.expander("📜 Historial d'enviaments", expanded=False):
+            log_items = sorted(log_notif.items(), key=lambda x: x[1], reverse=True)
+            for key_log, data_log in log_items[:20]:
+                parts = key_log.split("|", 1)
+                ev_date_log  = parts[0] if len(parts) > 0 else "?"
+                ev_title_log = parts[1] if len(parts) > 1 else key_log
+                st.markdown(
+                    f"<div class='event-meta'>✅ {data_log} &nbsp;·&nbsp; "
+                    f"<b>{ev_title_log}</b> &nbsp;(event: {ev_date_log})</div>",
+                    unsafe_allow_html=True,
+                )
+
+    st.markdown("")
+    st.info(
+        "💡 **Consell:** Per automatitzar l'enviament diari, programa el fitxer "
+        "`executar_notificacions.bat` al **Planificador de Tasques de Windows** "
+        "perquè s'executi cada dia a les 09:00h."
+    )
 
