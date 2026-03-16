@@ -30,6 +30,8 @@ videos = {
     'IbW8IQjPvac': 'Video 13',
     'LEYR2BEDHFg': 'Video 14',
     'v7nm8hpGoXA': 'Video 15',
+    '1xGB8G8f10Q': 'Video 16',
+    'kymZR5Lc5Hg': 'Video 17',
 }
 
 parts = []
