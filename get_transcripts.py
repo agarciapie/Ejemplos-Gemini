@@ -15,7 +15,8 @@ video_ids = [
     "Ifd5MkFS4sU",
     "Oe8CcAhtwvc",
     "IbW8IQjPvac",
-    "LEYR2BEDHFg"
+    "LEYR2BEDHFg",
+    "v7nm8hpGoXA",
 ]
 
 ytt = YouTubeTranscriptApi()
