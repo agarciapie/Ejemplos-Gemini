@@ -50,12 +50,16 @@ class PlantIdentification(BaseModel):
     curiositats: Optional[str] = Field(None, description="Curiositats, història o anècdotes interessants en català.")
     estat_conservacio: Optional[str] = Field(None, description="Estat de conservació de l'espècie en català.")
     toxicitat: Optional[str] = Field(None, description="Nivell de toxicitat per a humans o animals de companyia en català.")
+    consell_llum: Optional[str] = Field(None, description="Consells detallats sobre la llum necessària, il·luminació i exposició solar idònia en català.")
+    consell_reg: Optional[str] = Field(None, description="Consells detallats sobre el reg, quantitat, freqüència i requeriments d'humitat en català.")
+    consell_abonant: Optional[str] = Field(None, description="Consells detallats sobre l'abonant, fertilització i èpoques recomanades en català.")
+    consell_manteniment: Optional[str] = Field(None, description="Consells sobre la poda, manteniment, tipus de substrat o terra, i trasplantament en català.")
     confianca: Optional[str] = Field(None, description="Nivell de confiança en la identificació: 'alta', 'mitjana' o 'baixa'.")
 
 # ─── Plant Identification Prompt ──────────────────────────────────────────────
 IDENTIFICATION_PROMPT = """
 Analitza aquesta imatge i identifica la planta, flor o arbre que apareix.
-Emplena tots els camps del format de sortida requerit.
+Emplena tots els camps del format de sortida requerit, incloent-hi consells de cura pràctics i detallats (llum, reg, abonat, manteniment).
 Respon sempre en català per a tots els camps de text descriptius.
 Si no hi ha cap planta, flor o arbre a la imatge, indica-ho al camp 'identificat' com a fals i descriu-ho al camp 'missatge'.
 """
@@ -284,7 +288,28 @@ def main():
                         unsafe_allow_html=True,
                     )
 
+                # Care Tips Section
+                has_care_tips = any(
+                    result.get(field) for field in ["consell_llum", "consell_reg", "consell_abonant", "consell_manteniment"]
+                )
+                if has_care_tips:
+                    st.markdown('<h2 class="section-title">🌱 Guia de Cura i Manteniment</h2>', unsafe_allow_html=True)
+                    st.markdown('<div class="cards-grid">', unsafe_allow_html=True)
+                    care_cards_data = [
+                        ("☀️", "Llum i Il·luminació", result.get("consell_llum", ""), "card-light"),
+                        ("💧", "Reg i Humitat", result.get("consell_reg", ""), "card-water"),
+                        ("🧪", "Abonat i Nutrients", result.get("consell_abonant", ""), "card-fertilizer"),
+                        ("✂️", "Manteniment i Trasplant", result.get("consell_manteniment", ""), "card-maintenance"),
+                    ]
+                    care_html = ""
+                    for icon, title, content, cls in care_cards_data:
+                        card = info_card(icon, title, content, cls)
+                        if card:
+                            care_html += card
+                    st.markdown(care_html + "</div>", unsafe_allow_html=True)
+
                 # Cards Grid
+                st.markdown('<h2 class="section-title">ℹ️ Informació Botànica Detallada</h2>', unsafe_allow_html=True)
                 st.markdown('<div class="cards-grid">', unsafe_allow_html=True)
 
                 cards_data = [

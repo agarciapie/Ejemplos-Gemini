@@ -357,6 +357,30 @@ div.stButton > button:active {
     margin: 0;
 }
 
+/* Section Titles */
+.section-title {
+    font-family: var(--font-serif);
+    font-size: 2rem;
+    color: var(--primary-light);
+    margin: 3.5rem 0 1.5rem 0 !important;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 0.8rem;
+    position: relative;
+    letter-spacing: -0.5px;
+    animation: fadeIn 0.8s ease-out;
+}
+
+.section-title::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 60px;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-light), var(--primary));
+    border-radius: 2px;
+}
+
 /* Card Specific Aesthetics */
 .card-origin { border-top: 3px solid #3498db; }
 .card-distribution { border-top: 3px solid #9b59b6; }
@@ -367,6 +391,12 @@ div.stButton > button:active {
 .card-other { border-top: 3px solid #1abc9c; }
 .card-curiosity { border-top: 3px solid #e67e22; }
 .card-conservation { border-top: 3px solid #95a5a6; }
+
+/* Care Cards Specific Aesthetics */
+.card-light { border-top: 3px solid #ffca28; }      /* Amber/Yellow for Sun Light */
+.card-water { border-top: 3px solid #42a5f5; }      /* Blue for Water */
+.card-fertilizer { border-top: 3px solid #66bb6a; } /* Green for Fertilizer/Nutrients */
+.card-maintenance { border-top: 3px solid #26a69a; }/* Teal for Maintenance/Pruning */
 
 /* Grid Staggered Animations */
 .info-card:nth-child(1) { animation-delay: 0.1s; }
