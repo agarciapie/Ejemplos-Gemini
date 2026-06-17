@@ -5,6 +5,7 @@ PlantaVision és una aplicació web moderna dissenyada amb **Python** i **Stream
 ## ✨ Característiques
 
 - **Identificació Completa**: Proporciona el nom científic, nom popular (català, castellà, anglès) i família botànica.
+- **Guia de Cura i Manteniment**: Consells pràctics i personalitzats sobre il·luminació i llum solar, reg i humitat, abonat o fertilitzants, i manteniment general (poda o trasplantaments).
 - **Origen i Hàbitat**: Descobreix la procedència, la distribució geogràfica i el tipus d'hàbitat idoni per a l'espècie.
 - **Propietats i Usos**: Analitza els usos medicinals, culinaris i altres aplicacions pràctiques.
 - **Seguretat**: Alerta de toxicitat intel·ligent per prevenir perills.
