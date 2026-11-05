@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="netlify-drawer" content="false" />
+  <title>CaddieCat GPS — Telèmetre Golf i Pitch & Putt de Catalunya</title>
+
+  <!-- MapLibre GL JS (permet rotació de mapa tee -> green i ortofoto d'alta resolució) -->
+  <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+
+  <!-- Fonts Google -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css?v=3.1" />
+</head>
+<body>
+  <div id="app">
+    <!-- BARRA SUPERIOR: Selecció de Camp, Mode Vista i Mode Editor -->
+    <header class="top-bar">
+      <div class="course-selector-btn" id="openCourseModalBtn" title="Seleccionar Camp de Catalunya">
+        <span class="badge-type" id="currentCourseBadge">P&P</span>
+        <div class="course-title-wrap">
+          <span class="course-name" id="currentCourseName">Pitch & Putt Vallromanes</span>
+          <span class="course-sub" id="currentCourseSub">Vilanova del Vallès · 18 forats</span>
+        </div>
+        <svg class="chevron-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+      </div>
+
+      <div class="top-actions">
+        <div class="view-toggle" role="group" aria-label="Mode de vista">
+          <button id="btnViewHole" class="toggle-btn active" title="Vista Forat (Tee a baix, Green a dalt)">
+            🎯 Forat
+          </button>
+          <button id="btnViewCourse" class="toggle-btn" title="Vista General de tots els forats">
+            🗺️ Camp
+          </button>
+        </div>
+
+        <button id="btnToggleEditor" class="editor-btn" title="Editar Tees i Greens sobre el mapa satèl·lit">
+          ✏️ <span class="hide-sm">Editor</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- SUB-BARRA D'INFORMACIÓ DEL FORAT I SELECTOR DE TEE -->
+    <section class="hole-header-bar">
+      <div class="hole-Identity">
+        <div class="hole-number-pill">
+          <span class="label">FORAT</span>
+          <span class="num" id="holeNumberDisplay">1</span>
+        </div>
+        <div class="hole-meta">
+          <span class="par-badge" id="holeParDisplay">Par 3</span>
+          <span class="osm-status-badge" id="osmStatusBadge" title="Origen de les coordenades">📡 OSM / Verificat</span>
+        </div>
+      </div>
+
+      <!-- Selector de Tee de sortida -->
+      <div class="tee-selector-wrap">
+        <span class="tee-label">Sortida (Tee):</span>
+        <div class="tee-buttons" id="teeSelectorContainer">
+          <!-- Generat dinàmicament segons el camp -->
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTENIDOR DEL MAPA I ELEMENTS FLOTANTS -->
+    <main class="map-wrapper">
+      <div id="map"></div>
+
+      <!-- BANNER D'ESTAT DE CÀRREGA D'OPENSTREETMAP -->
+      <div id="osmLoadingBanner" class="osm-banner hidden">
+        <div class="spinner"></div>
+        <span id="osmBannerText">Cercant forats mapejats a OpenStreetMap...</span>
+      </div>
+
+      <!-- CONTROLS LATERALS DEL MAPA (Satèl·lit ICGC, Rotació, Centrar Punter) -->
+      <div class="map-floating-controls">
+        <button id="btnResetTarget" class="fab-btn" title="Centrar el punter mòbil al mig del forat">
+          🎯
+        </button>
+        <button id="btnOrientHole" class="fab-btn" title="Orientar el forat en vertical (Tee a baix -> Green a dalt)">
+          🧭
+        </button>
+        <button id="btnSatelliteSource" class="fab-btn" title="Canviar font de satèl·lit (ICGC Catalunya HD / Esri World)">
+          🛰️ <span class="sat-tag" id="satSourceTag">ICGC</span>
+        </button>
+        <button id="btnSyncOSM" class="fab-btn" title="Tornar a consultar OpenStreetMap per aquest camp">
+          🔄
+        </button>
+      </div>
+
+      <!-- PANELL D'EDITOR INTEGRAT (Ocult per defecte, s'activa amb el botó Editor) -->
+      <div id="editorPanel" class="editor-panel hidden">
+        <div class="editor-header">
+          <div>
+            <strong>✏️ Mode Editor de Forats</strong>
+            <p id="editorInstruction">Fes clic al mapa o arrossega per situar el Tee i el Green del <b>Forat <span id="editorHoleNum">1</span></b>. <i>(Es desa automàticament)</i></p>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <button id="btnSaveAndCloseEditor" class="btn-save-editor">💾 Desar i Tancar</button>
+            <button id="btnCloseEditor" class="close-small-btn" title="Tancar Editor">✕</button>
+          </div>
+        </div>
+        <div class="editor-controls">
+          <button id="btnSetTeeMode" class="edit-mode-btn active">
+            1️⃣ Marca el TEE al mapa
+          </button>
+          <button id="btnSetGreenMode" class="edit-mode-btn">
+            2️⃣ Marca el GREEN al mapa
+          </button>
+          <div class="par-selector">
+            <label>Par:</label>
+            <select id="selectHolePar">
+              <option value="3">Par 3</option>
+              <option value="4">Par 4</option>
+              <option value="5">Par 5</option>
+            </select>
+          </div>
+        </div>
+        <div class="editor-footer-actions">
+          <button id="btnAutoGenerateGrid" class="secondary-action-btn" title="Genera posicions inicials al voltant del camp si no hi ha cap forat">
+            ⚡ Generar plantilla 18 forats aquí
+          </button>
+          <button id="btnExportJSON" class="secondary-action-btn" title="Descarregar les coordenades editades en un fitxer JSON">
+            💾 Exportar JSON
+          </button>
+          <button id="btnImportJSON" class="secondary-action-btn" title="Carregar un fitxer JSON de camp">
+            📂 Importar
+          </button>
+          <input type="file" id="fileImportInput" accept=".json" style="display:none" />
+        </div>
+      </div>
+
+    </main>
+
+    <!-- NAVEGADOR INFERIOR DE FORATS (1 al 18) + DISTÀNCIES DE GREEN -->
+    <footer class="hole-navigator">
+      <!-- Mesures Directes del Green (Inici / Centre / Final) a l'esquerra per protegir-les del logo flotant de Netlify -->
+      <div class="green-distances-bar">
+        <div class="green-dist-item">
+          <span class="g-label">INICI</span>
+          <span class="g-value" id="distGreenFront">--m</span>
+        </div>
+        <div class="green-dist-item main-center">
+          <span class="g-label">⛳ CENTRE</span>
+          <span class="g-value highlight" id="distGreenCenter">--m</span>
+        </div>
+        <div class="green-dist-item">
+          <span class="g-label">FINAL</span>
+          <span class="g-value" id="distGreenBack">--m</span>
+        </div>
+      </div>
+
+      <!-- Controls de selecció de forat (amb marge de seguretat a la dreta per a logos o eines) -->
+      <div class="hole-nav-controls">
+        <button id="btnPrevHole" class="nav-arrow-btn" title="Forat Anterior">◀</button>
+        <div class="hole-strip" id="holeStripContainer">
+          <!-- Botons 1..18 generats dinàmicament -->
+        </div>
+        <button id="btnNextHole" class="nav-arrow-btn" title="Forat Següent">▶</button>
+      </div>
+    </footer>
+
+    <!-- MODAL DE SELECCIÓ DE CAMP (FCPP i FCGolf Catalunya) -->
+    <div id="courseModal" class="modal-backdrop hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div>
+            <h2>Camps de Catalunya (FCPP & FCGolf)</h2>
+            <p class="modal-subtitle">Selecciona un camp de Pitch & Putt o de Golf per carregar l'ortofoto i els forats</p>
+          </div>
+          <button id="closeCourseModalBtn" class="modal-close-btn">✕</button>
+        </div>
+
+        <div class="modal-filters">
+          <input type="text" id="courseSearchInput" placeholder="🔍 Cerca per nom o municipi (ex: Vallromanes, Gualta, Can Cuyàs, El Prat...)" />
+          <div class="filter-tabs">
+            <button class="filter-tab active" data-filter="ALL">Tots (<span id="countAll">0</span>)</button>
+            <button class="filter-tab" data-filter="VERIFIED">⭐ Verificats (<span id="countVerified">0</span>)</button>
+            <button class="filter-tab" data-filter="Pitch & Putt">⛳ Pitch & Putt FCPP (<span id="countPP">0</span>)</button>
+            <button class="filter-tab" data-filter="Golf">🏌️ Golf FCGolf (<span id="countGolf">0</span>)</button>
+          </div>
+        </div>
+
+        <div class="course-list" id="courseListContainer">
+          <!-- Llista de camps generada dinàmicament -->
+        </div>
+      </div>
+    </div>
+    <!-- NOTIFICACIÓ FLOTANT DE CONFIRMACIÓ DE DESAT -->
+    <div id="saveToast" class="save-toast hidden">✅ Canvis desats correctament!</div>
+  </div>
+
+  <!-- Llibreria oficial de Supabase (client JS per a persistència al núvol) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Credencials de connexió a Supabase -->
+  <script src="supabase-config.js?v=3.1"></script>
+
+  <!-- Dades de camps i Lògica de l'App -->
+  <script src="courses.js?v=3.1"></script>
+  <script src="app.js?v=3.1"></script>
+</body>
+</html>

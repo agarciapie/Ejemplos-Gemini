@@ -1,0 +1,1032 @@
+:root {
+  --bg-dark: #0f172a;
+  --bg-panel: #1e293b;
+  --bg-panel-glass: rgba(15, 23, 42, 0.88);
+  --border-color: rgba(255, 255, 255, 0.14);
+  --accent-green: #10b981;
+  --accent-green-bright: #34d399;
+  --accent-amber: #f59e0b;
+  --accent-blue: #3b82f6;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  font-family: var(--font-sans);
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100dvh;
+}
+
+/* ==========================================
+   BARRA SUPERIOR (Selector de Camp i Vista)
+   ========================================== */
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border-color);
+  gap: 10px;
+  z-index: 20;
+}
+
+.course-selector-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 6px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 0;
+  flex: 1;
+  max-width: 460px;
+}
+
+.course-selector-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--accent-green);
+}
+
+.badge-type {
+  background: var(--accent-green);
+  color: #052e16;
+  font-weight: 800;
+  font-size: 0.72rem;
+  padding: 3px 7px;
+  border-radius: 6px;
+  letter-spacing: 0.03em;
+  flex-shrink: 0;
+}
+
+.badge-type.golf {
+  background: var(--accent-blue);
+  color: #fff;
+}
+
+.course-title-wrap {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.course-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.course-sub {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chevron-icon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.view-toggle {
+  display: flex;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 3px;
+  border-radius: 9px;
+  border: 1px solid var(--border-color);
+}
+
+.toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.8rem;
+  padding: 6px 11px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.toggle-btn.active {
+  background: var(--accent-green);
+  color: #022c22;
+  font-weight: 700;
+}
+
+.editor-btn {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  color: #fbbf24;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.8rem;
+  padding: 7px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.editor-btn:hover, .editor-btn.active {
+  background: var(--accent-amber);
+  color: #000;
+}
+
+/* ==========================================
+   SUB-BARRA DEL FORAT I SELECTOR DE TEE
+   ========================================== */
+.hole-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 14px;
+  background: #141f35;
+  border-bottom: 1px solid var(--border-color);
+  gap: 10px;
+  z-index: 19;
+  flex-wrap: wrap;
+}
+
+.hole-Identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hole-number-pill {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #022c22;
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-weight: 800;
+}
+
+.hole-number-pill .label {
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+}
+
+.hole-number-pill .num {
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
+}
+
+.hole-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.par-badge {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 4px 9px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.osm-status-badge {
+  font-size: 0.72rem;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(59, 130, 246, 0.18);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+}
+
+.osm-status-badge.custom {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fcd34d;
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.tee-selector-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tee-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.tee-buttons {
+  display: flex;
+  gap: 5px;
+}
+
+.tee-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 2px solid transparent;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-main);
+  transition: all 0.15s ease;
+}
+
+.tee-chip .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.3);
+}
+
+.tee-chip.active {
+  border-color: #fff;
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.04);
+}
+
+/* ==========================================
+   MAPA PRINCIPAL I ELEMENTS OVERLAY
+   ========================================== */
+.map-wrapper {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  overflow: hidden;
+}
+
+#map {
+  width: 100%;
+  height: 100%;
+}
+
+.osm-banner {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid var(--accent-blue);
+  padding: 8px 16px;
+  border-radius: 30px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  z-index: 15;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.45);
+}
+
+.spinner {
+  width: 15px;
+  height: 15px;
+  border: 2.5px solid rgba(255,255,255,0.25);
+  border-top-color: var(--accent-green-bright);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Controls flotants a la dreta */
+.map-floating-controls {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 10;
+}
+
+.fab-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--bg-panel-glass);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-color);
+  color: #fff;
+  font-size: 1.15rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  transition: transform 0.15s, border-color 0.15s;
+}
+
+.fab-btn:hover {
+  border-color: var(--accent-green);
+  transform: scale(1.05);
+}
+
+.sat-tag {
+  font-size: 0.55rem;
+  font-weight: 800;
+  color: var(--accent-green-bright);
+  margin-top: -2px;
+}
+
+/* ==========================================
+   PANELL D'EDITOR SOBRE EL MAPA
+   ========================================== */
+.editor-panel {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 68px;
+  max-width: 520px;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(10px);
+  border: 2px solid var(--accent-amber);
+  border-radius: 14px;
+  padding: 12px 14px;
+  z-index: 14;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.editor-header strong {
+  color: #fbbf24;
+  font-size: 0.9rem;
+}
+
+.editor-header p {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.close-small-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+
+.btn-save-editor {
+  background: #10b981;
+  color: #022c22;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.78rem;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.btn-save-editor:hover {
+  background: #34d399;
+  transform: scale(1.02);
+}
+
+.save-toast {
+  position: fixed;
+  bottom: 84px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #10b981;
+  color: #022c22;
+  font-weight: 700;
+  font-size: 0.88rem;
+  padding: 10px 20px;
+  border-radius: 30px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.45);
+  z-index: 999;
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.save-toast.hidden {
+  opacity: 0;
+  transform: translateX(-50%) translateY(20px);
+  display: block !important;
+}
+
+.editor-controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.edit-mode-btn {
+  flex: 1;
+  min-width: 140px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.edit-mode-btn.active {
+  background: var(--accent-amber);
+  color: #000;
+  border-color: #fff;
+}
+
+.par-selector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  background: rgba(255,255,255,0.06);
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+
+.par-selector select {
+  background: #0f172a;
+  color: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  padding: 3px 6px;
+  font-weight: 700;
+}
+
+.editor-footer-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.secondary-action-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  padding: 6px 10px;
+  border-radius: 7px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.secondary-action-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ==========================================
+   (HUD flotant integrat ara a la barra inferior)
+   ========================================== */
+
+/* ==========================================
+   MARCADORS PERSONALITZATS SOBRE EL MAPA
+   ========================================== */
+.marker-tee {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #3b82f6;
+  border: 3px solid #fff;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.7rem;
+  color: #fff;
+  cursor: grab;
+}
+
+.marker-green {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #10b981;
+  border: 3px solid #fff;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  cursor: grab;
+}
+
+/* PUNTER MÒBIL (TARGET CROSSHAIR) */
+.marker-target {
+  width: 54px;
+  height: 54px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  touch-action: none;
+}
+
+.marker-target:active {
+  cursor: grabbing;
+}
+
+.target-ring {
+  width: 44px;
+  height: 44px;
+  border: 3px solid #fbbf24;
+  border-radius: 50%;
+  background: rgba(245, 158, 11, 0.2);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.65), 0 4px 14px rgba(0,0,0,0.6);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.target-ring::before, .target-ring::after {
+  content: '';
+  position: absolute;
+  background: #fbbf24;
+}
+
+.target-ring::before {
+  width: 100%;
+  height: 2px;
+}
+
+.target-ring::after {
+  width: 2px;
+  height: 100%;
+}
+
+.target-center-dot {
+  width: 8px;
+  height: 8px;
+  background: #fff;
+  border: 2px solid #000;
+  border-radius: 50%;
+  z-index: 2;
+}
+
+.target-floating-pill {
+  position: absolute;
+  top: -32px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #0f172a;
+  border: 2px solid #fbbf24;
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 20px;
+  white-space: nowrap;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+  pointer-events: none;
+}
+
+/* Etiquetes de forat en Vista General del Camp */
+.course-hole-badge {
+  background: rgba(15, 23, 42, 0.92);
+  border: 2px solid #10b981;
+  color: #fff;
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 0.75rem;
+  padding: 3px 7px;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.5);
+  transition: transform 0.15s;
+}
+
+.course-hole-badge:hover {
+  transform: scale(1.15);
+  background: #10b981;
+  color: #000;
+}
+
+.course-hole-badge.active {
+  background: #fbbf24;
+  border-color: #fff;
+  color: #000;
+}
+
+/* ==========================================
+   NAVEGADOR INFERIOR DE FORATS (1..18)
+   ========================================== */
+.hole-navigator {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  background: rgba(15, 23, 42, 0.96);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 7px 12px;
+  padding-right: 85px; /* Marge de seguretat per evitar que el logo flotant de Netlify tapi cap control */
+  gap: 12px;
+  z-index: 20;
+  box-shadow: 0 -4px 22px rgba(0, 0, 0, 0.4);
+}
+
+.hole-nav-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.nav-arrow-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 0.95rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.nav-arrow-btn:hover {
+  background: var(--accent-green);
+  color: #000;
+}
+
+.hole-strip {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  flex: 1;
+  scrollbar-width: none;
+  padding: 2px 0;
+}
+
+.hole-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.hole-num-btn {
+  min-width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.hole-num-btn.active {
+  background: var(--accent-green);
+  color: #022c22;
+  border-color: #fff;
+  font-weight: 800;
+  transform: translateY(-1px);
+}
+
+/* Mesures de Green integrades a l'esquerra (Inici, Centre, Final) */
+.green-distances-bar {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
+  padding-right: 12px;
+  border-right: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.green-dist-item {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 3px 8px;
+  min-width: 56px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+}
+
+.green-dist-item.main-center {
+  background: rgba(16, 185, 129, 0.18);
+  border: 1.5px solid rgba(16, 185, 129, 0.6);
+  min-width: 72px;
+}
+
+.g-label {
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+  margin-bottom: 1px;
+}
+
+.green-dist-item.main-center .g-label {
+  color: var(--accent-green-bright);
+}
+
+.g-value {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  line-height: 1.15;
+}
+
+.g-value.highlight {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--accent-green-bright);
+}
+
+/* ==========================================
+   MODAL DE SELECCIÓ DE CAMP
+   ========================================== */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.8);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 100;
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 680px;
+  max-height: 86vh;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 18px 20px 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h2 {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.modal-subtitle {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 3px;
+}
+
+.modal-close-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: #fff;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.modal-filters {
+  padding: 12px 20px;
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#courseSearchInput {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-dark);
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+}
+
+#courseSearchInput:focus {
+  outline: none;
+  border-color: var(--accent-green);
+}
+
+.filter-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filter-tab {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.filter-tab.active {
+  background: var(--accent-green);
+  color: #022c22;
+  border-color: transparent;
+}
+
+.course-list {
+  padding: 12px 20px 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.course-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.course-item:hover {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: var(--accent-green);
+  transform: translateX(3px);
+}
+
+.course-item.selected {
+  border-color: var(--accent-green);
+  background: rgba(16, 185, 129, 0.18);
+}
+
+.course-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.course-item-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.course-item-meta {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.course-item-right {
+  text-align: right;
+  font-size: 0.75rem;
+  color: var(--accent-green-bright);
+  font-weight: 700;
+}
+
+.hidden {
+  display: none !important;
+}
+
+@media (max-width: 600px) {
+  .hide-sm {
+    display: none;
+  }
+  .hole-header-bar {
+    padding: 6px 10px;
+  }
+  .tee-label {
+    display: none;
+  }
+  .hole-navigator {
+    flex-direction: column;
+    gap: 6px;
+    padding: 6px 8px;
+    padding-right: 70px; /* Reserva espai per al botó flotant de Netlify */
+  }
+  .hole-nav-controls {
+    width: 100%;
+  }
+  .green-distances-bar {
+    width: 100%;
+    border-right: none;
+    padding-right: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 5px;
+    display: grid;
+    grid-template-columns: 1fr 1.3fr 1fr;
+    gap: 6px;
+  }
+  .green-dist-item {
+    min-width: 0;
+  }
+}
+
+/* ==============================================================
+   SUPRESSIÓ DEFINITIVA DE GINYS FLOTANTS FORA DE L'APP (NETLIFY)
+   ============================================================== */
+body > *:not(#app):not(script):not(style),
+#netlify-drawer,
+netlify-drawer,
+netlify-drawer-app,
+[data-netlify-deploy-preview],
+[data-netlify-preview],
+.netlify-badge,
+.netlify-drawer,
+div[class*="netlify-drawer"],
+button[class*="netlify-drawer"],
+iframe[src*="netlify"],
+iframe[id*="netlify"],
+div[id*="netlify"],
+a[href*="netlify.com"] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  width: 0 !important;
+  max-height: 0 !important;
+  max-width: 0 !important;
+  position: fixed !important;
+  bottom: -9999px !important;
+  right: -9999px !important;
+  z-index: -999999 !important;
+}
