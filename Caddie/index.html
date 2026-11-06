@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="styles.css?v=3.1" />
+  <link rel="stylesheet" href="styles.css?v=3.5" />
 </head>
 <body>
   <div id="app">
@@ -88,6 +88,9 @@
         </button>
         <button id="btnSatelliteSource" class="fab-btn" title="Canviar font de satèl·lit (ICGC Catalunya HD / Esri World)">
           🛰️ <span class="sat-tag" id="satSourceTag">ICGC</span>
+        </button>
+        <button id="btnMapGreenSlopes" class="fab-btn btn-green-book" title="Veure mapa de caigudes del Green (LiDAR ICGC)">
+          📐
         </button>
         <button id="btnSyncOSM" class="fab-btn" title="Tornar a consultar OpenStreetMap per aquest camp">
           🔄
@@ -192,6 +195,97 @@
         </div>
       </div>
     </div>
+    <!-- MODAL DE CAIGUDES DE GREEN (GREEN READING BOOK) -->
+    <div id="greenSlopeModal" class="modal-backdrop hidden">
+      <div class="green-slope-card">
+        <div class="gs-modal-header">
+          <div class="gs-header-title">
+            <span class="gs-badge">📐 GREEN BOOK</span>
+            <h2 id="gsModalHoleTitle">Forat 1 · Oller del Mas</h2>
+            <p class="gs-modal-subtitle" id="gsModalSubtitle">
+              Model Digital LiDAR 1m (ICGC) · Altitud: <strong id="gsModalAlt">--m</strong>
+            </p>
+          </div>
+          <button id="btnCloseGreenSlopeModal" class="modal-close-btn" title="Tancar">✕</button>
+        </div>
+
+        <!-- CONTENIDOR DEL GREEN AMB CAIGUDES -->
+        <div class="green-visualizer-wrap">
+          <div class="green-surface-disc" id="greenSurfaceDisc">
+            <!-- Indicador Brúixola Nord -->
+            <div class="north-compass-badge" title="Orientació del disc: Nord a dalt">
+              <span class="compass-n-arrow">▲</span> N
+            </div>
+
+            <!-- Anelles concèntriques de distància des del forat (2m, 4m, 6m, 8m) -->
+            <div class="green-ring ring-8m"><span class="ring-label">8m</span></div>
+            <div class="green-ring ring-6m"><span class="ring-label">6m</span></div>
+            <div class="green-ring ring-4m"><span class="ring-label">4m</span></div>
+            <div class="green-ring ring-2m"><span class="ring-label">2m</span></div>
+
+            <!-- Línia i Fletxa Visual de Trajectòria d'arribada del cop des del Tee -->
+            <svg class="attack-trajectory-svg" id="attackTrajectorySvg" viewBox="0 0 280 280">
+              <defs>
+                <marker id="teeTrajectoryArrow" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+                  <polygon points="0 0, 8 3.5, 0 7" fill="#38bdf8" />
+                </marker>
+                <filter id="trajectoryGlow" x="-30%" y="-30%" width="160%" height="160%">
+                  <feDropShadow dx="0" dy="0" stdDeviation="2.5" flood-color="#0284c7" flood-opacity="0.9"/>
+                </filter>
+              </defs>
+              <line id="attackGuideLine" class="attack-guide-line" x1="140" y1="274" x2="140" y2="168"
+                    stroke="rgba(2, 132, 199, 0.45)" stroke-width="5" stroke-linecap="round" />
+              <line id="attackTrajectoryLine" class="attack-trajectory-line" x1="140" y1="274" x2="140" y2="168"
+                    stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="6 4"
+                    marker-end="url(#teeTrajectoryArrow)" filter="url(#trajectoryGlow)" />
+              <circle id="attackBallOrigin" cx="140" cy="274" r="4.5" fill="#ffffff" stroke="#0284c7" stroke-width="2" />
+            </svg>
+
+            <!-- Marcador d'entrada del cop al perímetre del green -->
+            <div class="tee-entry-marker" id="teeEntryMarker" title="Direcció per on entra la bola des del Tee">
+              <span class="entry-icon">🏌️</span>
+              <span class="entry-label">Entrada</span>
+              <span class="entry-arrow" id="teeEntryArrow">➔</span>
+            </div>
+
+            <!-- Marcador de la Bandera -->
+            <div class="pin-marker" id="pinMarker" title="Bandera (Centre de Green)">
+              ⛳
+            </div>
+
+            <!-- Contenidor per a les 9 fletxes de pendent -->
+            <div class="slope-arrows-container" id="slopeArrowsContainer">
+              <!-- Generat dinàmicament -->
+            </div>
+          </div>
+        </div>
+
+        <!-- PEU AMB RESUM I LLEGENDA -->
+        <div class="gs-modal-footer">
+          <div class="slope-summary-bar">
+            <span class="summary-lbl">Caiguda predominant:</span>
+            <span class="summary-highlight" id="gsSummaryVal">--</span>
+          </div>
+
+          <div class="shot-entry-bar" id="shotEntryBar">
+            <span class="shot-entry-lbl">🏌️ Entrada del cop:</span>
+            <span class="shot-entry-val" id="gsShotEntryVal">--</span>
+          </div>
+
+          <div class="slope-legend-scale">
+            <span class="legend-chip l-green">🟢 &lt;1.5% Suau</span>
+            <span class="legend-chip l-yellow">🟡 1.5-3% Moderada</span>
+            <span class="legend-chip l-orange">🟠 3-4.5% Forta</span>
+            <span class="legend-chip l-red">🔴 &gt;4.5% Molt forta</span>
+          </div>
+
+          <p class="gs-disclaimer">
+            * Cada fletxa apunta en la direcció per on la bola trenca i roda per gravetat cap avall.
+          </p>
+        </div>
+      </div>
+    </div>
+
     <!-- NOTIFICACIÓ FLOTANT DE CONFIRMACIÓ DE DESAT -->
     <div id="saveToast" class="save-toast hidden">✅ Canvis desats correctament!</div>
   </div>
@@ -199,10 +293,10 @@
   <!-- Llibreria oficial de Supabase (client JS per a persistència al núvol) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- Credencials de connexió a Supabase -->
-  <script src="supabase-config.js?v=3.1"></script>
+  <script src="supabase-config.js?v=3.5"></script>
 
   <!-- Dades de camps i Lògica de l'App -->
-  <script src="courses.js?v=3.1"></script>
-  <script src="app.js?v=3.1"></script>
+  <script src="courses.js?v=3.5"></script>
+  <script src="app.js?v=3.5"></script>
 </body>
 </html>

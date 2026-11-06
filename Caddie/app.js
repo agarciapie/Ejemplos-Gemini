@@ -69,6 +69,9 @@ const GeoUtils = {
     const brng = this.toDeg(Math.atan2(y, x));
     return (brng + 360) % 360;
   },
+  bearing(p1, p2) {
+    return this.bearingDegrees(p1, p2);
+  },
 
   // Punt intermedi entre dos punts (fraction 0..1)
   interpolate(p1, p2, fraction = 0.55) {
@@ -1374,6 +1377,28 @@ function setupUIEvents() {
     document.getElementById("fileImportInput").click();
   });
 
+  
+  // Modal de caigudes de green
+  const btnOpenSlopesPill = document.getElementById("btnOpenGreenSlopes");
+  if (btnOpenSlopesPill) btnOpenSlopesPill.addEventListener("click", openGreenSlopeModal);
+
+  const btnMapSlopes = document.getElementById("btnMapGreenSlopes");
+  if (btnMapSlopes) btnMapSlopes.addEventListener("click", openGreenSlopeModal);
+
+  const btnCloseSlopes = document.getElementById("btnCloseGreenSlopeModal");
+  if (btnCloseSlopes) {
+    btnCloseSlopes.addEventListener("click", () => {
+      document.getElementById("greenSlopeModal").classList.add("hidden");
+    });
+  }
+
+  const greenSlopeModal = document.getElementById("greenSlopeModal");
+  if (greenSlopeModal) {
+    greenSlopeModal.addEventListener("click", (e) => {
+      if (e.target === greenSlopeModal) greenSlopeModal.classList.add("hidden");
+    });
+  }
+
   document.getElementById("fileImportInput").addEventListener("change", (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -1395,6 +1420,298 @@ function setupUIEvents() {
     };
     reader.readAsText(file);
   });
+}
+
+
+// ==============================================================
+// 9. VISTA DE CAIGUDES DE GREEN (ICGC LIDAR 1M - GREEN BOOK)
+// ==============================================================
+
+// Consulta en directe les cotes de relleu LiDAR 1m de l'ICGC i calcula els vectors de caiguda
+async function fetchGreenSlopesFromICGC(greenLat, greenLng) {
+  const mToLat = 1.0 / 111000.0;
+  const mToLng = 1.0 / (111000.0 * Math.cos(greenLat * Math.PI / 180.0));
+  const step = 3.0; // 3 metres entre punts
+  const offsets = [-6.0, -3.0, 0.0, 3.0, 6.0];
+
+  const gridCoords = [];
+  for (const dy of offsets) {
+    for (const dx of offsets) {
+      gridCoords.push({
+        dx, dy,
+        plat: greenLat + dy * mToLat,
+        plng: greenLng + dx * mToLng
+      });
+    }
+  }
+
+  async function fetchPointElevation(pt) {
+    const delta = 0.0003;
+    const bbox = `${pt.plat - delta},${pt.plng - delta},${pt.plat + delta},${pt.plng + delta}`;
+    const url = `https://geoserveis.icgc.cat/servei/catalunya/elevacions-territorial/wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetFeatureInfo&LAYERS=model-elevacions-terreny-catalunya-lidar-1m-2021-2023&QUERY_LAYERS=model-elevacions-terreny-catalunya-lidar-1m-2021-2023&STYLES=&CRS=EPSG:4326&BBOX=${bbox}&WIDTH=101&HEIGHT=101&I=50&J=50&INFO_FORMAT=application/json`;
+
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) return null;
+      const data = await resp.json();
+      if (data && data.features && data.features.length > 0) {
+        const props = data.features[0].properties;
+        const val = props['Elevació'] || props['Elevacio'] || props['value_0'];
+        return val ? parseFloat(val) : null;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  try {
+    const elevResults = await Promise.all(gridCoords.map(pt => fetchPointElevation(pt)));
+
+    const grid = [];
+    let idx = 0;
+    for (let r = 0; r < 5; r++) {
+      const row = [];
+      for (let c = 0; c < 5; c++) {
+        row.push(elevResults[idx++]);
+      }
+      grid.push(row);
+    }
+
+    const arrows = [];
+    for (let r = 1; r < 4; r++) {
+      for (let c = 1; c < 4; c++) {
+        const dx = offsets[c];
+        const dy = offsets[r];
+        const zLeft = grid[r][c - 1];
+        const zRight = grid[r][c + 1];
+        const zDown = grid[r - 1][c];
+        const zUp = grid[r + 1][c];
+
+        if (zLeft == null || zRight == null || zDown == null || zUp == null || grid[r][c] == null) {
+          continue;
+        }
+
+        const dz_dx = (zRight - zLeft) / (2.0 * step);
+        const dz_dy = (zUp - zDown) / (2.0 * step);
+
+        // Vector de baixada (trencament per gravetat)
+        const vx = -dz_dx;
+        const vy = -dz_dy;
+
+        const slopePct = Math.round(Math.sqrt(dz_dx * dz_dx + dz_dy * dz_dy) * 1000) / 10;
+        const bearing = Math.round(((Math.atan2(vx, vy) * 180.0 / Math.PI) + 360) % 360 * 10) / 10;
+
+        arrows.push({
+          dx, dy,
+          slopePct,
+          bearing,
+          elevation: Math.round(grid[r][c] * 100) / 100
+        });
+      }
+    }
+
+    return {
+      centerElevation: grid[2][2] != null ? Math.round(grid[2][2] * 100) / 100 : null,
+      arrows
+    };
+  } catch (err) {
+    console.warn("Error calculant caigudes ICGC:", err);
+    return null;
+  }
+}
+
+// Obre el modal i dibuixa el green i les fletxes direccionals
+async function openGreenSlopeModal() {
+  const hole = getCurrentHole();
+  if (!hole || !hole.green) return;
+
+  const modal = document.getElementById("greenSlopeModal");
+  const titleEl = document.getElementById("gsModalHoleTitle");
+  const altEl = document.getElementById("gsModalAlt");
+  const arrowsContainer = document.getElementById("slopeArrowsContainer");
+  const summaryVal = document.getElementById("gsSummaryVal");
+  const attackDirText = document.getElementById("attackDirText");
+
+  titleEl.textContent = `Forat ${hole.number} · ${state.currentCourse ? state.currentCourse.name : "Camp"}`;
+  arrowsContainer.innerHTML = '<div style="color:#fff;font-size:0.85rem;text-align:center;padding-top:125px;">🛰️ Carregant relleu LiDAR ICGC a 1 metre...</div>';
+  summaryVal.textContent = "Calculant...";
+  modal.classList.remove("hidden");
+
+  // 1. Obtenim les caigudes (primer del forat, després de la definició estàtica a courses.js)
+  let slopes = hole.greenSlopes;
+  if (!slopes || !slopes.arrows || slopes.arrows.length === 0) {
+    if (state.currentCourse && state.currentCourse.holes) {
+      const staticHole = state.currentCourse.holes.find(h => h.number === hole.number);
+      if (staticHole && staticHole.greenSlopes && staticHole.greenSlopes.arrows) {
+        slopes = staticHole.greenSlopes;
+        hole.greenSlopes = slopes;
+      }
+    }
+  }
+
+  // 2. Si no en té, consultem en directe l'API LiDAR 1m de l'ICGC
+  if (!slopes || !slopes.arrows || slopes.arrows.length === 0) {
+    slopes = await fetchGreenSlopesFromICGC(hole.green.lat, hole.green.lng);
+    if (slopes) {
+      hole.greenSlopes = slopes;
+      if (typeof saveCourseToLocalStorage === "function") {
+        saveCourseToLocalStorage(state.currentCourse.id, state.holesData, false);
+      }
+    }
+  }
+
+  if (!slopes || !slopes.arrows || slopes.arrows.length === 0) {
+    arrowsContainer.innerHTML = '<div style="color:#f87171;font-size:0.85rem;text-align:center;padding-top:125px;">No s\'han pogut carregar les dades LiDAR de l\'ICGC per a aquest green.</div>';
+    summaryVal.textContent = "Dades no disponibles";
+    return;
+  }
+
+  // Altitud
+  altEl.textContent = slopes.centerElevation ? `${slopes.centerElevation}m` : "--m";
+
+  // Direcció d'arribada del cop des del Tee
+  const effectiveTee = getEffectiveTeePosition(hole);
+  let teeBearing = 0;
+  try {
+    teeBearing = Math.round(GeoUtils.bearingDegrees(effectiveTee, hole.green));
+  } catch (_) {
+    teeBearing = Math.round(GeoUtils.bearing(effectiveTee, hole.green) || 0);
+  }
+  if (attackDirText) {
+    attackDirText.textContent = `Tir des del Tee: ${teeBearing}°`;
+  }
+
+  // Renderitzem les 9 fletxes sobre el disc de green (centre = 140px, 1m ~= 16px)
+  // Càlcul de la posició i trajectòria d'arribada al Green
+  const flightBearing = teeBearing;
+  const teeAzimuth = (flightBearing + 180) % 360;
+  const teeAngleRad = (teeAzimuth * Math.PI) / 180.0;
+
+  const entryRadius = 136.0;
+  const targetRadius = 26.0;
+  const badgeRadius = 118.0;
+
+  const xEntry = Math.round(140 + entryRadius * Math.sin(teeAngleRad));
+  const yEntry = Math.round(140 - entryRadius * Math.cos(teeAngleRad));
+
+  const xTarget = Math.round(140 + targetRadius * Math.sin(teeAngleRad));
+  const yTarget = Math.round(140 - targetRadius * Math.cos(teeAngleRad));
+
+  const xBadge = Math.round(140 + badgeRadius * Math.sin(teeAngleRad));
+  const yBadge = Math.round(140 - badgeRadius * Math.cos(teeAngleRad));
+
+  const trajectoryLine = document.getElementById("attackTrajectoryLine");
+  const guideLine = document.getElementById("attackGuideLine");
+  const ballOrigin = document.getElementById("attackBallOrigin");
+  if (trajectoryLine && guideLine && ballOrigin) {
+    trajectoryLine.setAttribute("x1", xEntry);
+    trajectoryLine.setAttribute("y1", yEntry);
+    trajectoryLine.setAttribute("x2", xTarget);
+    trajectoryLine.setAttribute("y2", yTarget);
+
+    guideLine.setAttribute("x1", xEntry);
+    guideLine.setAttribute("y1", yEntry);
+    guideLine.setAttribute("x2", xTarget);
+    guideLine.setAttribute("y2", yTarget);
+
+    ballOrigin.setAttribute("cx", xEntry);
+    ballOrigin.setAttribute("cy", yEntry);
+  }
+
+  const entryMarker = document.getElementById("teeEntryMarker");
+  const entryArrow = document.getElementById("teeEntryArrow");
+  if (entryMarker) {
+    entryMarker.style.left = `${xBadge}px`;
+    entryMarker.style.top = `${yBadge}px`;
+  }
+  if (entryArrow) {
+    entryArrow.style.transform = `rotate(${flightBearing}deg)`;
+  }
+
+  let originCard = "Sud";
+  if (teeAzimuth >= 337.5 || teeAzimuth < 22.5) originCard = "Nord";
+  else if (teeAzimuth < 67.5) originCard = "Nord-Est";
+  else if (teeAzimuth < 112.5) originCard = "Est";
+  else if (teeAzimuth < 157.5) originCard = "Sud-Est";
+  else if (teeAzimuth < 202.5) originCard = "Sud";
+  else if (teeAzimuth < 247.5) originCard = "Sud-Oest";
+  else if (teeAzimuth < 292.5) originCard = "Oest";
+  else originCard = "Nord-Oest";
+
+  const pxPerMeter = 16.0;
+  arrowsContainer.innerHTML = "";
+
+  let totalSlope = 0;
+  let sumVx = 0;
+  let sumVy = 0;
+
+  slopes.arrows.forEach((arr) => {
+    totalSlope += arr.slopePct;
+    const rad = arr.bearing * Math.PI / 180.0;
+    sumVx += Math.sin(rad);
+    sumVy += Math.cos(rad);
+
+    const itemEl = document.createElement("div");
+    itemEl.className = "slope-arrow-item";
+    const leftPx = 140 + arr.dx * pxPerMeter;
+    const topPx = 140 - arr.dy * pxPerMeter;
+    itemEl.style.left = `${leftPx}px`;
+    itemEl.style.top = `${topPx}px`;
+
+    let badgeColor = "#22c55e"; // Verd <1.5%
+    let arrowColor = "#34d399";
+    if (arr.slopePct >= 4.5) {
+      badgeColor = "#ef4444"; // Vermell
+      arrowColor = "#f87171";
+    } else if (arr.slopePct >= 3.0) {
+      badgeColor = "#f97316"; // Taronja
+      arrowColor = "#fb923c";
+    } else if (arr.slopePct >= 1.5) {
+      badgeColor = "#eab308"; // Groc
+      arrowColor = "#facc15";
+    }
+
+    itemEl.innerHTML = `
+      <div class="arrow-svg-wrap" style="transform: rotate(${arr.bearing}deg);" title="Caiguda cap a ${arr.bearing}°">
+        <svg viewBox="0 0 24 24" fill="${arrowColor}">
+          <path d="M12 2L4.5 15h5v7h5v-7h5L12 2z"/>
+        </svg>
+      </div>
+      <span class="slope-pct-badge" style="background:${badgeColor};">${arr.slopePct}%</span>
+    `;
+    arrowsContainer.appendChild(itemEl);
+  });
+
+  const avgSlope = (totalSlope / slopes.arrows.length).toFixed(1);
+  const avgBearing = Math.round(((Math.atan2(sumVx, sumVy) * 180.0 / Math.PI) + 360) % 360);
+  let dirName = "Sud";
+  if (avgBearing >= 337.5 || avgBearing < 22.5) dirName = "Nord ⬆";
+  else if (avgBearing < 67.5) dirName = "Nord-Est ↗";
+  else if (avgBearing < 112.5) dirName = "Est ➔";
+  else if (avgBearing < 157.5) dirName = "Sud-Est ↘";
+  else if (avgBearing < 202.5) dirName = "Sud ⬇";
+  else if (avgBearing < 247.5) dirName = "Sud-Oest ↙";
+  else if (avgBearing < 292.5) dirName = "Oest ⬅";
+  else dirName = "Nord-Oest ↖";
+
+  summaryVal.textContent = `${avgSlope}% cap a ${dirName} (${avgBearing}°)`;
+
+  // Càlcul de l'efecte relatiu de la caiguda respecte a la trajectòria del cop
+  const shotEntryVal = document.getElementById("gsShotEntryVal");
+  if (shotEntryVal) {
+    const relDiff = ((avgBearing - flightBearing + 360) % 360);
+    let breakTip = "";
+    if (relDiff >= 25 && relDiff <= 155) {
+      breakTip = "· Caiguda d'esquerra a dreta ➔";
+    } else if (relDiff >= 205 && relDiff <= 335) {
+      breakTip = "· Caiguda de dreta a esquerra ⬅";
+    } else if (relDiff > 335 || relDiff < 25) {
+      breakTip = "· Green en baixada ⬇ (ràpid)";
+    } else {
+      breakTip = "· Green en pujada ⬆ (frena)";
+    }
+
+    shotEntryVal.innerHTML = `Ve pel <strong>${originCard}</strong> (${flightBearing}°) cap a la bandera <br><span style="color:#facc15;font-weight:700;">${breakTip}</span>`;
+  }
 }
 
 // Arrencada
