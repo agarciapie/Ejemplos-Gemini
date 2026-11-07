@@ -1,3 +1,77 @@
+<!--
+================================================================================
+  CaddieCat GPS — Telèmetre i Guia de Golf i Pitch & Putt de Catalunya
+================================================================================
+
+  DESCRIPCIÓ GENERAL:
+  Aplicació web responsive (PWA) de telèmetre GPS, mesurador de distàncies,
+  anàlisi de caigudes de green i targeta de joc per a tots els camps de 
+  Pitch & Putt (FCPP) i Golf (FCGolf) de Catalunya.
+
+  FUNCIONALITATS PRINCIPALS:
+
+  1. CARTOGRAFIA I ORTOFOTOS D'ALTA RESOLUCIÓ:
+     - Ortofotos oficials d'alta definició de l'Institut Cartogràfic i Geològic 
+       de Catalunya (ICGC) amb màxim detall del terreny català.
+     - Cobertura satèl·lit alternativa mitjançant Esri World Imagery (permet
+       alternar en qualsevol moment amb el botó 🛰️).
+
+  2. TELÈMETRE GPS INTEL·LIGENT (MESURA EN METRES EXACTES):
+     - Distàncies directes calculades mitjançant fórmula geodèsica Haversine:
+       * Distància des de la barra de sortida (Tee) fins a la bandera/green.
+       * Mesures de referència al green: Inici (Front), Centre (⛳ Flag) i Final (Back).
+     - Punter Mòbil Interactiu (Crosshair / Target 🎯):
+       * Arrossegable lliurement pel carrer per mesurar distàncies intermèdies
+         a búnquers, doglegs, obstacles d'aigua o zones d'aterratge de bola.
+       * Mostra automàticament: «Tee ➔ Punter» i «Punter ➔ Green».
+
+  3. ORIENTACIÓ DINÀMICA DEL FORAT:
+     - Botó 🧭: Rota i orienta la càmera del satèl·lit de manera que el Tee
+       quedi sempre a baix i el Green a dalt (alineació vertical de tir).
+     - Selector de vista: Mode «🎯 Forat» o Mode «🗺️ Camp» (perspectiva general 18 forats).
+
+  4. GREEN READING BOOK — CAIGUDES AMB LIDAR ICGC A 1 METRE (Botó 📐):
+     - Anàlisi de relleu d'alta precisió obtingut de la malla LiDAR oficial 
+       de l'ICGC (Model Digital d'Elevacions a 1 metre de resolució).
+     - Malla 3x3 de fletxes de caiguda que apunten cap a on la bola trenca 
+       i roda per gravetat, amb escala de color segons la intensitat:
+       * 🟢 <1.5%: Pendent suau
+       * 🟡 1.5 - 3.0%: Pendent moderat (estàndard)
+       * 🟠 3.0 - 4.5%: Pendent fort
+       * 🔴 >4.5%: Pendent molt fort (cresta / talús)
+     - Anelles concèntriques de distància des del forat (2m, 4m, 6m i 8m).
+     - Fletxa visual animada de trajectòria del cop: Mostra per on entra la bola 
+       des del Tee de sortida fins a la bandera.
+     - Indicador d'orientació amb brúixola Nord (▲ N) i xapa d'entrada (🏌️ Entrada ➔).
+     - Consell tàctic en llenguatge natural: tradueix la caiguda respecte a la
+       línia del cop (ex: «Caiguda d'esquerra a dreta ➔», «Green en baixada ⬇»).
+
+  5. TARGETA DE DISTÀNCIES I HÀNDICAPS — SCORECARD (Botó 📋):
+     - Taula completa dels 18 forats del camp amb Par, Hàndicap (HCP) i distàncies.
+     - Columnes per a cada barra de sortida disponible (Competició, EPPA, Social, etc.).
+     - Subtotals automàtics: 1a Volta (OUT 1-9), 2a Volta (IN 10-18) i Total Camp.
+     - Ressaltat visual del forat en joc actual (⛳) i xips de color per dificultat.
+     - Navegació interactiva: fer clic a qualsevol fila porta directament a aquell
+       forat sobre el mapa satèl·lit.
+     - Estadístiques clau: mitjana de metres, forat més llarg, més curt i més exigent.
+
+  6. SELECCIÓ DE TEES OFICIALS:
+     - Permet alternar entre barres oficials (ex: Competició/FCPP, Curta/EPPA, Social/Groga).
+     - Recalibra a l'instant totes les distàncies i trajectòries segons el Tee escollit.
+
+  7. INTEGRACIÓ AMB OPENSTREETMAP (OSM) I MODE EDITOR DE FORATS:
+     - Sincronització automàtica amb Overpass API per descarregar forats mapejats.
+     - Mode Editor integrat (✏️) per situar o reajustar manualment Tees i Greens.
+     - Eines d'exportació i importació de dades en format JSON.
+
+  8. PERSISTÈNCIA AL NÚVOL (SUPABASE) I FUNCIONAMENT OFFLINE:
+     - Base de dades al núvol (Supabase PostgreSQL) per desar edicions i sincronitzar
+       tots els dispositius automàticament.
+     - Emmagatzematge a la memòria cau local (localStorage) amb tolerància total 
+       a pèrdues de cobertura durant el partit.
+     - Disseny optimitzat per a dispositius mòbils (iOS i Android) i ordinadors.
+================================================================================
+-->
 <!DOCTYPE html>
 <html lang="ca">
 <head>
@@ -15,7 +89,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="styles.css?v=3.5" />
+  <link rel="stylesheet" href="styles.css?v=3.7" />
 </head>
 <body>
   <div id="app">
@@ -55,6 +129,9 @@
         </div>
         <div class="hole-meta">
           <span class="par-badge" id="holeParDisplay">Par 3</span>
+          <button id="btnOpenScorecardPill" class="scorecard-chip-btn" title="Obrir Targeta de Distàncies i Hàndicaps">
+            📋 <span class="hide-xs">Targeta</span>
+          </button>
           <span class="osm-status-badge" id="osmStatusBadge" title="Origen de les coordenades">📡 OSM / Verificat</span>
         </div>
       </div>
@@ -88,6 +165,9 @@
         </button>
         <button id="btnSatelliteSource" class="fab-btn" title="Canviar font de satèl·lit (ICGC Catalunya HD / Esri World)">
           🛰️ <span class="sat-tag" id="satSourceTag">ICGC</span>
+        </button>
+        <button id="btnOpenScorecard" class="fab-btn btn-scorecard-fab" title="Targeta de distàncies i hàndicaps de tots els forats">
+          📋
         </button>
         <button id="btnMapGreenSlopes" class="fab-btn btn-green-book" title="Veure mapa de caigudes del Green (LiDAR ICGC)">
           📐
@@ -286,6 +366,39 @@
       </div>
     </div>
 
+    <!-- MODAL DE TARGETA DE DISTÀNCIES I HÀNDICAPS (SCORECARD) -->
+    <div id="scorecardModal" class="modal-backdrop hidden">
+      <div class="scorecard-card">
+        <div class="sc-modal-header">
+          <div class="sc-header-title">
+            <span class="sc-badge">📋 TARGETA DE DISTÀNCIES</span>
+            <h2 id="scCourseTitle">Oller del Mas Pitch & Putt</h2>
+            <p class="sc-subtitle" id="scCourseSubtitle">
+              18 forats · Par 54 · 1.590 m
+            </p>
+          </div>
+          <button id="btnCloseScorecardModal" class="modal-close-btn" title="Tancar">✕</button>
+        </div>
+
+        <!-- TAULA DE FORATS, PAR, HCP I DISTÀNCIES -->
+        <div class="sc-table-wrap">
+          <table class="sc-table" id="scorecardTable">
+            <thead id="scorecardTableHead"></thead>
+            <tbody id="scorecardTableBody"></tbody>
+            <tfoot id="scorecardTableFoot"></tfoot>
+          </table>
+        </div>
+
+        <!-- RESUM ESTADÍSTIC AL PEU -->
+        <div class="sc-modal-footer">
+          <div class="sc-quick-stats" id="scQuickStats"></div>
+          <p class="sc-note">
+            * Fes clic a qualsevol forat per seleccionar-lo directament al mapa.
+          </p>
+        </div>
+      </div>
+    </div>
+
     <!-- NOTIFICACIÓ FLOTANT DE CONFIRMACIÓ DE DESAT -->
     <div id="saveToast" class="save-toast hidden">✅ Canvis desats correctament!</div>
   </div>
@@ -293,10 +406,10 @@
   <!-- Llibreria oficial de Supabase (client JS per a persistència al núvol) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- Credencials de connexió a Supabase -->
-  <script src="supabase-config.js?v=3.5"></script>
+  <script src="supabase-config.js?v=3.7"></script>
 
   <!-- Dades de camps i Lògica de l'App -->
-  <script src="courses.js?v=3.5"></script>
-  <script src="app.js?v=3.5"></script>
+  <script src="courses.js?v=3.7"></script>
+  <script src="app.js?v=3.7"></script>
 </body>
 </html>

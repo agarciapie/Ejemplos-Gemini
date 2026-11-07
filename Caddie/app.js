@@ -1399,6 +1399,27 @@ function setupUIEvents() {
     });
   }
 
+  // Modal de Targeta de distàncies (Scorecard)
+  const btnOpenScorecard = document.getElementById("btnOpenScorecard");
+  if (btnOpenScorecard) btnOpenScorecard.addEventListener("click", openScorecardModal);
+
+  const btnOpenScorecardPill = document.getElementById("btnOpenScorecardPill");
+  if (btnOpenScorecardPill) btnOpenScorecardPill.addEventListener("click", openScorecardModal);
+
+  const btnCloseScorecard = document.getElementById("btnCloseScorecardModal");
+  if (btnCloseScorecard) {
+    btnCloseScorecard.addEventListener("click", () => {
+      document.getElementById("scorecardModal").classList.add("hidden");
+    });
+  }
+
+  const scorecardModal = document.getElementById("scorecardModal");
+  if (scorecardModal) {
+    scorecardModal.addEventListener("click", (e) => {
+      if (e.target === scorecardModal) scorecardModal.classList.add("hidden");
+    });
+  }
+
   document.getElementById("fileImportInput").addEventListener("change", (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -1712,6 +1733,212 @@ async function openGreenSlopeModal() {
 
     shotEntryVal.innerHTML = `Ve pel <strong>${originCard}</strong> (${flightBearing}°) cap a la bandera <br><span style="color:#facc15;font-weight:700;">${breakTip}</span>`;
   }
+}
+
+// ==============================================================
+// 10. TARGETA DE DISTÀNCIES I HÀNDICAPS (SCORECARD)
+// ==============================================================
+
+function getHoleDistanceForTee(hole, tee) {
+  if (tee.isEppa && hole.eppaMeters) {
+    return hole.eppaMeters;
+  }
+  if (hole.officialMeters) {
+    if (tee.offsetMeters) {
+      return Math.max(10, Math.round(hole.officialMeters + tee.offsetMeters));
+    }
+    return hole.officialMeters;
+  }
+  if (hole.tee && hole.green && !hole.unmapped) {
+    const raw = GeoUtils.distanceMeters(hole.tee, hole.green);
+    if (tee.offsetMeters) {
+      return Math.max(10, Math.round(raw + tee.offsetMeters));
+    }
+    return Math.round(raw);
+  }
+  return null;
+}
+
+function openScorecardModal() {
+  if (!state.currentCourse || !state.holesData || state.holesData.length === 0) return;
+
+  const modal = document.getElementById("scorecardModal");
+  const titleEl = document.getElementById("scCourseTitle");
+  const subtitleEl = document.getElementById("scCourseSubtitle");
+  const thead = document.getElementById("scorecardTableHead");
+  const tbody = document.getElementById("scorecardTableBody");
+  const tfoot = document.getElementById("scorecardTableFoot");
+  const statsEl = document.getElementById("scQuickStats");
+
+  const course = state.currentCourse;
+  const holes = state.holesData;
+  const tees = course.teesAvailable && course.teesAvailable.length > 0
+    ? course.teesAvailable
+    : [{ id: "main", name: "Sortida", color: "#38bdf8", offsetMeters: 0 }];
+
+  titleEl.textContent = course.name;
+
+  // Càlcul de totals
+  let totalPar = 0;
+  let totalDistanceMain = 0;
+  const teeDistTotals = {};
+  tees.forEach(t => { teeDistTotals[t.id] = 0; });
+
+  let longestHole = null;
+  let maxDist = -1;
+  let shortestHole = null;
+  let minDist = 99999;
+  let hardestHole = null;
+  let easiestHole = null;
+
+  holes.forEach(h => {
+    const p = h.par || 3;
+    totalPar += p;
+
+    tees.forEach(t => {
+      const d = getHoleDistanceForTee(h, t);
+      if (d != null) {
+        teeDistTotals[t.id] += d;
+        if (t.id === (state.selectedTeeId || tees[0].id)) {
+          if (d > maxDist) { maxDist = d; longestHole = h; }
+          if (d < minDist) { minDist = d; shortestHole = h; }
+        }
+      }
+    });
+
+    if (h.hcp === 1) hardestHole = h;
+    if (h.hcp === holes.length || (holes.length === 18 && h.hcp === 18)) easiestHole = h;
+  });
+
+  const mainTee = tees.find(t => t.id === state.selectedTeeId) || tees[0];
+  totalDistanceMain = teeDistTotals[mainTee.id] || 0;
+
+  subtitleEl.textContent = `${holes.length} forats · Par ${totalPar} · ${totalDistanceMain > 0 ? totalDistanceMain.toLocaleString('ca-ES') + ' m' : ''} (${course.municipality})`;
+
+  // 1. CAPÇALERA DE LA TAULA
+  let thHtml = `<tr>
+    <th style="width: 55px;">Forat</th>
+    <th style="width: 50px;">Hcp</th>
+    <th style="width: 50px;">Par</th>`;
+
+  tees.forEach(t => {
+    const isCur = t.id === state.selectedTeeId;
+    const bullet = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${t.color};margin-right:4px;"></span>`;
+    thHtml += `<th style="color:${isCur ? '#fff' : t.color}; ${isCur ? 'background:rgba(255,255,255,0.08);' : ''}">${bullet}${t.name} (m)</th>`;
+  });
+  thHtml += `</tr>`;
+  thead.innerHTML = thHtml;
+
+  // 2. COS DE LA TAULA
+  tbody.innerHTML = "";
+  let v1Par = 0;
+  const v1Dists = {};
+  tees.forEach(t => { v1Dists[t.id] = 0; });
+
+  let v2Par = 0;
+  const v2Dists = {};
+  tees.forEach(t => { v2Dists[t.id] = 0; });
+
+  holes.forEach((h) => {
+    const isCurrent = h.number === state.currentHoleNumber;
+    const tr = document.createElement("tr");
+    tr.className = "sc-hole-row" + (isCurrent ? " current-hole" : "");
+    tr.title = `Fes clic per anar al Forat ${h.number}`;
+
+    const parVal = h.par || 3;
+    let hcpClass = "sc-hcp-badge";
+    if (h.hcp != null) {
+      if (h.hcp <= 4) hcpClass += " sc-hcp-hard";
+      else if (h.hcp >= 15) hcpClass += " sc-hcp-easy";
+    }
+
+    let rowHtml = `
+      <td class="sc-hole-num">
+        ${isCurrent ? '<span class="sc-current-indicator">⛳</span>' : ''}
+        <b>${h.number}</b>
+      </td>
+      <td class="sc-hcp-cell"><span class="${hcpClass}">${h.hcp != null ? h.hcp : '-'}</span></td>
+      <td class="sc-par-cell">${parVal}</td>
+    `;
+
+    tees.forEach(t => {
+      const d = getHoleDistanceForTee(h, t);
+      const isCurTee = t.id === state.selectedTeeId;
+      rowHtml += `<td class="sc-dist-cell" style="${isCurTee ? 'color:#38bdf8;font-weight:800;background:rgba(56,189,248,0.06);' : 'color:#94a3b8;'}">${d != null ? d + 'm' : '--'}</td>`;
+
+      if (h.number <= 9) {
+        if (d != null) v1Dists[t.id] += d;
+      } else {
+        if (d != null) v2Dists[t.id] += d;
+      }
+    });
+
+    if (h.number <= 9) {
+      v1Par += parVal;
+    } else {
+      v2Par += parVal;
+    }
+
+    tr.innerHTML = rowHtml;
+    tr.addEventListener("click", () => {
+      selectHole(h.number, true);
+      modal.classList.add("hidden");
+    });
+    tbody.appendChild(tr);
+
+    // Subtotal 1a Volta (OUT) després del forat 9 si n'hi ha més de 9
+    if (h.number === 9 && holes.length > 9) {
+      const sub1 = document.createElement("tr");
+      sub1.className = "sc-subtotal-row";
+      let subHtml = `<td><b>1a V.</b></td><td>OUT</td><td><b>${v1Par}</b></td>`;
+      tees.forEach(t => {
+        const isCur = t.id === state.selectedTeeId;
+        subHtml += `<td style="${isCur ? 'font-weight:800;' : ''}">${v1Dists[t.id]}m</td>`;
+      });
+      sub1.innerHTML = subHtml;
+      tbody.appendChild(sub1);
+    }
+  });
+
+  // Subtotal 2a Volta (IN) si hi ha 18 forats
+  if (holes.length >= 18) {
+    const sub2 = document.createElement("tr");
+    sub2.className = "sc-subtotal-row";
+    let subHtml = `<td><b>2a V.</b></td><td>IN</td><td><b>${v2Par}</b></td>`;
+    tees.forEach(t => {
+      const isCur = t.id === state.selectedTeeId;
+      subHtml += `<td style="${isCur ? 'font-weight:800;' : ''}">${v2Dists[t.id]}m</td>`;
+    });
+    sub2.innerHTML = subHtml;
+    tbody.appendChild(sub2);
+  }
+
+  // 3. RESUM FINAL AL FOOTER DE LA TAULA
+  let tfootHtml = `<tr class="sc-total-row">
+    <td><b>TOTAL</b></td>
+    <td>-</td>
+    <td><b>${totalPar}</b></td>`;
+
+  tees.forEach(t => {
+    const isCur = t.id === state.selectedTeeId;
+    tfootHtml += `<td style="${isCur ? 'color:#10b981;font-weight:900;' : ''}"><b>${teeDistTotals[t.id]}m</b></td>`;
+  });
+  tfootHtml += `</tr>`;
+  tfoot.innerHTML = tfootHtml;
+
+  // 4. XIPS ESTADÍSTICS RÀPIDS
+  if (statsEl) {
+    const avgDist = holes.length > 0 ? (totalDistanceMain / holes.length).toFixed(1) : 0;
+    statsEl.innerHTML = `
+      <div class="sc-stat-chip">📏 Mitjana: <strong>${avgDist} m</strong>/forat</div>
+      ${longestHole ? `<div class="sc-stat-chip">🚀 Més llarg: <strong>Forat ${longestHole.number} (${maxDist}m)</strong></div>` : ''}
+      ${shortestHole ? `<div class="sc-stat-chip">🎯 Més curt: <strong>Forat ${shortestHole.number} (${minDist}m)</strong></div>` : ''}
+      ${hardestHole ? `<div class="sc-stat-chip">🔥 Més difícil: <strong>Forat ${hardestHole.number} (Hcp 1)</strong></div>` : ''}
+      ${easiestHole ? `<div class="sc-stat-chip">✨ Més assequible: <strong>Forat ${easiestHole.number} (Hcp ${easiestHole.hcp})</strong></div>` : ''}
+    `;
+  }
+
+  modal.classList.remove("hidden");
 }
 
 // Arrencada
